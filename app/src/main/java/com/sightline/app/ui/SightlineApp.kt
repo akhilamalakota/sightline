@@ -31,7 +31,10 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -238,35 +241,99 @@ private fun DistanceGuideOverlay(target: DetectedObject?) {
 }
 
 /**
- * Minimal object tags — small, translucent, positioned by bbox.
+ * Object tags — one small card per detection, pinned near the object's bbox.
+ * Placements are resolved greedily so overlapping boxes never cover each other:
+ * each tag gets pushed down past already-placed tags, and a connector line +
+ * colored dot links every tag to its object so it stays readable.
  */
 @Composable
 private fun ObjectTagsOverlay(objects: List<DetectedObject>) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val density = LocalDensity.current
+        val canvasW = with(density) { maxWidth.toPx() }
+        val canvasH = with(density) { maxHeight.toPx() }
+        val textMeasurer = rememberTextMeasurer()
+        val stepY = with(density) { 16.dp.toPx() }
+        // Fixed extras around the measured text (dot + spacer + card padding).
+        val padH = with(density) { 22.dp.toPx() }
+        val padV = with(density) { 6.dp.toPx() }
+
+        data class Placed(val x: Float, val y: Float, val w: Float, val h: Float)
+
+        data class TagPlacement(
+            val text: String,
+            val color: Color,
+            val x: Float,
+            val y: Float,
+            val w: Float,
+            val h: Float,
+            val anchorX: Float,
+            val anchorY: Float,
+        )
+
+        val occupied = mutableListOf<Placed>()
+        val placements = mutableListOf<TagPlacement>()
+
         objects.take(5).forEach { obj ->
             val xFraction = (obj.bbox[0] + obj.bbox[2]) / 2f
-            val yFraction = (obj.bbox[1] + obj.bbox[3]) / 2f
-
             val distanceColor = when (obj.distanceZone) {
                 DistanceZone.NEAR -> Color(0xFFFF5252)
                 DistanceZone.MID -> Color(0xFFFFD740)
                 DistanceZone.FAR -> Color(0xFF69F0AE)
             }
 
+            val text = "${obj.label} · ${obj.distanceDisplay()} · ${obj.confidencePercent()}"
+            val measured = textMeasurer.measure(
+                text = AnnotatedString(text),
+                style = TextStyle(fontSize = 10.sp),
+            )
+            val tagW = measured.size.width + padH
+            val tagH = measured.size.height + padV
+
+            // Anchor point: top-center of the object's bbox, in px.
+            val anchorX = canvasW * xFraction
+            val anchorY = canvasH * obj.bbox[1]
+
+            var x = (anchorX - tagW / 2f).coerceIn(4f, (canvasW - tagW - 4f).coerceAtLeast(4f))
+            var y = (anchorY - tagH).coerceAtLeast(8f)
+
+            // Push down until the tag no longer collides with any placed tag.
+            var attempts = 0
+            while (attempts++ < 24 && occupied.any { r ->
+                    x < r.x + r.w && x + tagW > r.x && y < r.y + r.h && y + tagH > r.y
+                }
+            ) {
+                y += stepY
+            }
+            occupied.add(Placed(x, y, tagW, tagH))
+            placements.add(TagPlacement(text, distanceColor, x, y, tagW, tagH, anchorX, anchorY))
+        }
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            placements.forEach { p ->
+                drawLine(
+                    color = Color.White.copy(alpha = 0.55f),
+                    start = Offset(p.x + p.w / 2f, p.y + p.h),
+                    end = Offset(p.anchorX, p.anchorY),
+                    strokeWidth = 1.5.dp.toPx(),
+                )
+                drawCircle(
+                    color = p.color,
+                    radius = 3.5.dp.toPx(),
+                    center = Offset(p.anchorX, p.anchorY),
+                )
+            }
+        }
+
+        placements.forEach { p ->
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = when {
-                    xFraction < 0.33f -> Alignment.CenterStart
-                    xFraction > 0.66f -> Alignment.CenterEnd
-                    else -> Alignment.Center
-                },
+                modifier = Modifier.offset { IntOffset(p.x.toInt(), p.y.toInt()) },
             ) {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.Black.copy(alpha = 0.5f)
+                        containerColor = Color.Black.copy(alpha = 0.55f)
                     ),
                     shape = RoundedCornerShape(4.dp),
-                    modifier = Modifier.padding(4.dp),
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -276,11 +343,11 @@ private fun ObjectTagsOverlay(objects: List<DetectedObject>) {
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(distanceColor)
+                                .background(p.color)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${obj.label} · ${obj.distanceDisplay()} · ${obj.confidencePercent()}",
+                            text = p.text,
                             color = Color.White,
                             fontSize = 10.sp,
                         )
