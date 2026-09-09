@@ -24,6 +24,10 @@ import org.json.JSONObject
 
 private const val TAG = "SightlineVM"
 
+private const val ARRIVAL_METERS = 1.2f
+private const val ARRIVAL_REPEAT_MS = 8_000L
+private val ARRIVAL_MODES = setOf(GoalMode.FIND, GoalMode.GUIDE)
+
 class SightlineViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Subsystems ---
@@ -34,6 +38,12 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     val voice = VoiceManager(application)
     private val memory = MemoryStore(application)
     private val telemetry = TelemetryClient()
+
+    // --- Distance / arrival state ---
+    @Volatile private var pendingCalibration: Pair<Float, Float>? = null
+    private var lastArrivalAnnounceMs = 0L
+    private var lastSpokenMeterFloor = -1
+    private var lastSpokenZone: DistanceZone? = null
 
     // --- UI State ---
     data class UiState(
@@ -84,11 +94,21 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         if (bitmap == null) return
 
         try {
+            pendingCalibration?.let { (focalMm, sensorWidthMm) ->
+                pendingCalibration = null
+                if (focalMm > 0f && sensorWidthMm > 0f && bitmap.width > 0) {
+                    val focalPx = focalMm * (bitmap.width / sensorWidthMm)
+                    spatial.setFocalLength(focalPx)
+                    Log.i(TAG, "Camera calibrated: focal=${focalMm}mm sensorW=${sensorWidthMm}mm -> focalPx=$focalPx")
+                }
+            }
+
+            val frameHeightPx = bitmap.height
             val detections = detector.detect(bitmap)
             bitmap.recycle()
 
             val targetLabel = _uiState.value.currentGoal?.target
-            val world = spatial.buildWorldModel(detections, targetLabel)
+            val world = spatial.buildWorldModel(detections, targetLabel, frameHeightPx)
 
             _uiState.value = _uiState.value.copy(
                 detectedObjects = world.objects,
@@ -111,20 +131,37 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun processActiveGoal(goal: UserGoal, world: SpatialWorldModel) {
+        val target = world.targetLock
+        val dist = target?.distanceMeters
+        val arrived = target != null &&
+            ((dist != null && dist <= ARRIVAL_METERS) ||
+                (dist == null && target.distanceZone == DistanceZone.NEAR)) &&
+            target.direction == Direction.CENTER
+
+        if (arrived && goal.mode in ARRIVAL_MODES &&
+            System.currentTimeMillis() - lastArrivalAnnounceMs < ARRIVAL_REPEAT_MS
+        ) {
+            // Already announced arrival recently — keep the caption fresh, don't re-speak.
+            _uiState.value = _uiState.value.copy(
+                lastResponse = responseBuilder.buildArrivalResponse(target).text
+            )
+            return
+        }
+
         val response = when (goal.mode) {
             GoalMode.FIND -> {
                 val matches = world.findAllMatches(goal.target)
-                if (matches.isEmpty()) {
-                    responseBuilder.buildNoDetectionResponse()
-                } else {
-                    responseBuilder.buildFindResponse(goal, world)
+                when {
+                    matches.isEmpty() -> responseBuilder.buildNoDetectionResponse()
+                    arrived -> {
+                        lastArrivalAnnounceMs = System.currentTimeMillis()
+                        responseBuilder.buildArrivalResponse(target)
+                    }
+                    else -> responseBuilder.buildFindResponse(goal, world)
                 }
             }
-            GoalMode.GUIDE -> {
-                val arrived = world.targetLock != null &&
-                        world.targetLock.distanceZone == DistanceZone.NEAR &&
-                        world.targetLock.direction == Direction.CENTER
-                responseBuilder.buildGuideResponse(goal, world, arrived)
+            GoalMode.GUIDE -> responseBuilder.buildGuideResponse(goal, world, arrived).also {
+                if (arrived) lastArrivalAnnounceMs = System.currentTimeMillis()
             }
             GoalMode.UNDERSTAND -> responseBuilder.buildUnderstandResponse(world)
             GoalMode.REMEMBER -> responseBuilder.buildNoDetectionResponse()
@@ -132,6 +169,11 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         speakAndDisplay(response)
+
+        // While approaching (not yet arrived) keep the user updated on distance.
+        if (goal.mode in ARRIVAL_MODES && !arrived) {
+            speakApproachProgress(goal, target, dist)
+        }
     }
 
     // --- Init ---
@@ -183,6 +225,12 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         Log.i(TAG, "Parsed goal: mode=${goal.mode}, target=${goal.target}")
+
+        // Fresh goal → reset approach-progress trackers so the first meter
+        // boundary is announced again.
+        lastSpokenMeterFloor = -1
+        lastSpokenZone = null
+        lastArrivalAnnounceMs = 0L
 
         _uiState.value = _uiState.value.copy(
             currentGoal = goal,
@@ -278,6 +326,15 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.value = _uiState.value.copy(showDebug = !_uiState.value.showDebug)
     }
 
+    /**
+     * Called by the UI once the camera binds: lens focal length (mm) and
+     * sensor physical width (mm) from CameraCharacteristics. Converted to
+     * focal-length-in-pixels on the first usable frame.
+     */
+    fun setCameraCalibration(focalMm: Float, sensorWidthMm: Float) {
+        pendingCalibration = focalMm to sensorWidthMm
+    }
+
     // --- Helpers ---
 
     private var lastSpokenText = ""
@@ -305,6 +362,30 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
                 .getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
             v.vibrate(150)
         } catch (_: Exception) { }
+    }
+
+    /**
+     * Re-speaks target direction/distance as the user approaches: on whole-meter
+     * crossings when metric distance is available, else on zone changes.
+     */
+    private fun speakApproachProgress(goal: UserGoal, target: DetectedObject?, dist: Float?) {
+        if (target == null) return
+        if (System.currentTimeMillis() - lastSpokenTimeMs < 2500) return
+        val name = target.label.replaceFirstChar { it.uppercase() }
+        val text = if (dist != null) {
+            val floor = dist.toInt()
+            if (floor == lastSpokenMeterFloor && lastSpokenMeterFloor >= 0) return
+            lastSpokenMeterFloor = floor
+            lastSpokenZone = null
+            "$name, ${spatial.metersWord(dist)}."
+        } else {
+            if (target.distanceZone == lastSpokenZone) return
+            lastSpokenZone = target.distanceZone
+            lastSpokenMeterFloor = -1
+            "$name is ${spatial.distanceWord(target.distanceZone)}, " +
+                "${spatial.directionWord(target.direction)}."
+        }
+        speakAndDisplay(SpokenResponse(text))
     }
 
     private fun sendTelemetry(state: UiState, world: SpatialWorldModel) {

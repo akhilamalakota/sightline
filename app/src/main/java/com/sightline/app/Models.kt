@@ -1,9 +1,23 @@
 package com.sightline.app
 
+import kotlin.math.roundToInt
+
 /**
  * Core data types for SIGHTLINE.
  * These are the shared vocabulary across every module.
  */
+
+/**
+ * Human-readable distance for on-screen labels: "2.4 m", "85 cm", or zone fallback.
+ */
+fun DetectedObject.distanceDisplay(): String = when {
+    distanceMeters != null && distanceMeters < 1f -> "${(distanceMeters * 100).roundToInt()} cm"
+    distanceMeters != null -> "${(distanceMeters * 10).roundToInt() / 10.0} m"
+    else -> distanceZone.name.lowercase()
+}
+
+/** Confidence as a rounded percentage string, e.g. "87%". */
+fun DetectedObject.confidencePercent(): String = "${(confidence * 100).roundToInt()}%"
 
 /** Where an object is horizontally in the camera frame. */
 enum class Direction { LEFT, CENTER, RIGHT }

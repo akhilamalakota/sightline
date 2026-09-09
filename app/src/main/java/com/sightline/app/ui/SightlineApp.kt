@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,12 +24,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -37,6 +42,8 @@ import com.sightline.app.DetectedObject
 import com.sightline.app.Direction
 import com.sightline.app.DistanceZone
 import com.sightline.app.GoalMode
+import com.sightline.app.confidencePercent
+import com.sightline.app.distanceDisplay
 import java.util.concurrent.Executors
 
 private const val TAG = "SightlineUI"
@@ -106,6 +113,9 @@ fun SightlineApp(viewModel: SightlineViewModel) {
         // Object tags (subtle, small)
         ObjectTagsOverlay(state.detectedObjects)
 
+        // Distance guide line from user to tracked target + metric info
+        DistanceGuideOverlay(state.targetLock)
+
         // Bottom gradient scrim
         Box(
             modifier = Modifier
@@ -174,6 +184,60 @@ fun SightlineApp(viewModel: SightlineViewModel) {
 }
 
 /**
+ * Distance guide: dashed line from the user (bottom-center) to the tracked
+ * target, with a metric pill (label · distance · confidence).
+ */
+@Composable
+private fun DistanceGuideOverlay(target: DetectedObject?) {
+    if (target == null) return
+
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val density = LocalDensity.current
+        val canvasW = with(density) { maxWidth.toPx() }
+        val canvasH = with(density) { maxHeight.toPx() }
+        val pillHalfW = with(density) { 80.dp.toPx() }
+        val pillTopOffset = with(density) { 32.dp.toPx() }
+        val originY = with(density) { canvasH - 110.dp.toPx() }
+
+        val cx = canvasW * ((target.bbox[0] + target.bbox[2]) / 2f).coerceIn(0.04f, 0.96f)
+        val cy = canvasH * ((target.bbox[1] + target.bbox[3]) / 2f).coerceIn(0.08f, 0.92f)
+        val pillWidth = pillHalfW * 2f
+        val pillX = (cx - pillHalfW).coerceIn(0f, canvasW - pillWidth)
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawLine(
+                color = Color(0xFF00E5FF),
+                start = Offset(canvasW / 2f, originY),
+                end = Offset(cx, cy),
+                strokeWidth = 3.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(14.dp.toPx(), 10.dp.toPx())),
+            )
+            drawCircle(Color(0xFF00E5FF), radius = 7.dp.toPx(), center = Offset(canvasW / 2f, originY))
+            drawCircle(Color(0xFFFF4081), radius = 8.dp.toPx(), center = Offset(cx, cy))
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF00E5FF).copy(alpha = 0.92f)),
+            shape = RoundedCornerShape(6.dp),
+            modifier = Modifier.offset {
+                IntOffset(
+                    x = pillX.toInt(),
+                    y = (canvasH * target.bbox[1] - pillTopOffset).coerceAtLeast(0f).toInt(),
+                )
+            }
+        ) {
+            Text(
+                text = "${target.label} · ${target.distanceDisplay()} · ${target.confidencePercent()}",
+                color = Color.Black,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/**
  * Minimal object tags — small, translucent, positioned by bbox.
  */
 @Composable
@@ -216,7 +280,7 @@ private fun ObjectTagsOverlay(objects: List<DetectedObject>) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = obj.label,
+                            text = "${obj.label} · ${obj.distanceDisplay()} · ${obj.confidencePercent()}",
                             color = Color.White,
                             fontSize = 10.sp,
                         )
@@ -269,13 +333,29 @@ private fun CameraPreview(viewModel: SightlineViewModel) {
                                 }
 
                             cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
+                            val camera = cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 CameraSelector.DEFAULT_BACK_CAMERA,
                                 preview,
                                 imageAnalysis,
                             )
                             Log.i(TAG, "Camera bound OK")
+
+                            // Read lens/sensor geometry for metric distance estimation.
+                            try {
+                                val cam2 = androidx.camera.camera2.interop.Camera2CameraInfo.from(camera.cameraInfo)
+                                val focal = cam2.getCameraCharacteristic(
+                                    android.hardware.camera2.CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS
+                                )?.get(0) ?: 0f
+                                val phys = cam2.getCameraCharacteristic(
+                                    android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE
+                                )
+                                val sensorW = phys?.width ?: 0f
+                                viewModel.setCameraCalibration(focal, sensorW)
+                                Log.i(TAG, "Calibration: focal=${focal}mm sensorW=${sensorW}mm")
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Calibration read failed", e)
+                            }
                         } catch (e: Exception) {
                             Log.e(TAG, "Camera binding failed", e)
                             cameraError = "Camera failed: ${e.message}"

@@ -31,17 +31,21 @@ class ResponseBuilder {
         if (matches.size == 1) {
             val obj = matches.first()
             val article = articleFor(obj.label)
+            val distText = obj.distanceMeters?.let { spatial.metersWord(it) }
+                ?: spatial.distanceWord(obj.distanceZone)
             return SpokenResponse(
-                text = "$article ${obj.label} is ${spatial.distanceWord(obj.distanceZone)}, " +
+                text = "$article ${obj.label} is $distText, " +
                        "${spatial.directionWord(obj.direction)}."
             )
         }
 
         // Multiple matches — describe the closest one
-        val closest = matches.minByOrNull { distanceScore(it) }!!
+        val closest = matches.minByOrNull { closenessScore(it) }!!
+        val distText = closest.distanceMeters?.let { spatial.metersWord(it) }
+            ?: spatial.distanceWord(closest.distanceZone)
         return SpokenResponse(
             text = "There are ${matches.size} ${goal.target}s. " +
-                   "One is ${spatial.distanceWord(closest.distanceZone)}, " +
+                   "One is $distText, " +
                    "${spatial.directionWord(closest.direction)}."
         )
     }
@@ -55,6 +59,8 @@ class ResponseBuilder {
         hasArrived: Boolean,
     ): SpokenResponse {
         if (hasArrived) {
+            val obj = world.targetLock
+            if (obj != null) return buildArrivalResponse(obj)
             return SpokenResponse(
                 text = "${goal.target.replaceFirstChar { it.uppercase() }} is right ahead.",
                 isHapticAlert = true,
@@ -75,6 +81,16 @@ class ResponseBuilder {
             PathStatus.CLEAR -> SpokenResponse(text = "Continue forward.")
             PathStatus.UNKNOWN -> SpokenResponse(text = "Let me scan again.")
         }
+    }
+
+    /**
+     * Arrival announcement — user has walked up to the tracked object.
+     */
+    fun buildArrivalResponse(obj: DetectedObject): SpokenResponse {
+        return SpokenResponse(
+            text = "You've reached the ${obj.label}.",
+            isHapticAlert = true,
+        )
     }
 
     /**
@@ -140,14 +156,18 @@ class ResponseBuilder {
         return if (label.isNotEmpty() && label[0].lowercaseChar() in vowels) "an" else "a"
     }
 
-    private fun distanceScore(obj: DetectedObject): Float {
-        val zone = when (obj.distanceZone) {
-            DistanceZone.NEAR -> 0f; DistanceZone.MID -> 1f; DistanceZone.FAR -> 2f
+    /** Closeness score — lower is closer. Prefers metric distance, then zone, then centre. */
+    private fun closenessScore(obj: DetectedObject): Float {
+        val meters = obj.distanceMeters ?: when (obj.distanceZone) {
+            DistanceZone.NEAR -> 0.7f
+            DistanceZone.MID -> 3.0f
+            DistanceZone.FAR -> 7.0f
         }
         val dir = when (obj.direction) {
-            Direction.CENTER -> 0f; Direction.LEFT, Direction.RIGHT -> 0.5f
+            Direction.CENTER -> 0f
+            Direction.LEFT, Direction.RIGHT -> 0.5f
         }
-        return zone + dir
+        return meters + dir
     }
 
     private fun formatTimeAgo(timestampMs: Long): String {
