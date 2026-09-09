@@ -1,13 +1,18 @@
 package com.sightline.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,9 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sightline.app.ui.SightlineApp
 import com.sightline.app.ui.SightlineViewModel
+import com.sightline.app.wake.WakeWordService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -30,10 +35,16 @@ private const val TAG = "SightlineMain"
 
 class MainActivity : ComponentActivity() {
 
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.CAMERA,
-        Manifest.permission.RECORD_AUDIO,
-    )
+    // Shared with the compose tree: onStart/onStop set app visibility.
+    private val vm: SightlineViewModel by viewModels()
+
+    private val requiredPermissions: Array<String> by lazy {
+        buildList {
+            add(Manifest.permission.CAMERA)
+            add(Manifest.permission.RECORD_AUDIO)
+            if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
+        }.toTypedArray()
+    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -56,10 +67,11 @@ class MainActivity : ComponentActivity() {
             Log.i(TAG, "All permissions already granted")
         }
 
+        promptOverlayPermissionOnce()
+
         setContent {
             MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme()) {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
-                    val vm: SightlineViewModel = viewModel()
                     var ready by remember { mutableStateOf(false) }
 
                     // ALL init happens in onCreate via lifecycleScope — no Compose timing issues
@@ -96,12 +108,13 @@ class MainActivity : ComponentActivity() {
                         // Connect telemetry
                         vm.connectTelemetry()
 
+                        // Wake service is started by onStart/onStop capture toggles —
+                        // never start capture here while the app is on screen.
+
                         ready = true
                         Log.i(TAG, "==================== ALL INIT DONE ====================")
-                        Toast.makeText(app, "🚀 Ready! Tap mic button to speak", Toast.LENGTH_LONG).show()
-                        // Speak instructions so user knows what to do
-                        kotlinx.coroutines.delay(500)
-                        vm.voice.speak("Sightline is ready. Tap the microphone button, then say what you need. For example, say find a chair, or, what is around me.")
+                        Toast.makeText(app, "🚀 Hands-free mode on", Toast.LENGTH_LONG).show()
+                        // Greeting + auto-listen are handled by the ViewModel's initVoice.
                     }
 
                     if (ready) {
@@ -117,6 +130,44 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // App is visible: the in-app STT owns the mic, pause the wake word listener.
+        WakeWordService.stopCapture(this)
+        vm.setAppVisible(true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // App left the screen: wake word listener takes over the mic.
+        vm.setAppVisible(false)
+        WakeWordService.startCapture(this)
+    }
+
+    /** One-time request for SYSTEM_ALERT_WINDOW so the wake word can bring the app to the front from background/post-lock. */
+    private fun promptOverlayPermissionOnce() {
+        if (Build.VERSION.SDK_INT < 29) return
+        if (Settings.canDrawOverlays(this)) return
+        val prefs = getSharedPreferences("sightline_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("overlay_prompt_shown", false)) return
+        prefs.edit().putBoolean("overlay_prompt_shown", true).apply()
+        Toast.makeText(
+            this,
+            "Allow 'Display over other apps' for Sightline to wake up by voice.",
+            Toast.LENGTH_LONG
+        ).show()
+        try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Overlay settings screen unavailable", e)
         }
     }
 }

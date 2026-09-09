@@ -20,6 +20,7 @@ import com.sightline.app.output.VoiceManager
 import com.sightline.app.spatial.SpatialEngine
 import com.sightline.app.telemetry.TelemetryClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,6 +68,9 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     private var lastLocateHapticMs = 0L
 
     // --- UI State ---
+    @Volatile private var appVisible = true
+    @Volatile private var arrivalResetScheduled = false
+
     data class UiState(
         val phase: GoalMode = GoalMode.IDLE,
         val currentGoal: UserGoal? = null,
@@ -217,6 +221,26 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             speakApproachProgress(goal, target, dist)
             if (target != null) hapticLocate(target)
         }
+
+        // After the arrival announcement finishes, hand control back to the
+        // hands-free voice loop so the user can just keep talking.
+        if (arrived && goal.mode in ARRIVAL_MODES && !arrivalResetScheduled) {
+            arrivalResetScheduled = true
+            val resetGoal = goal
+            viewModelScope.launch {
+                var waitedMs = 0L
+                while (voice.isSpeaking.value && waitedMs < 8000) {
+                    delay(200)
+                    waitedMs += 200
+                }
+                arrivalResetScheduled = false
+                val cur = _uiState.value
+                if (cur.phase != GoalMode.IDLE && cur.currentGoal == resetGoal) {
+                    Log.i(TAG, "Arrival announced - returning to hands-free voice loop")
+                    returnToIdle()
+                }
+            }
+        }
     }
 
     // --- Init ---
@@ -244,7 +268,17 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             }
             voice.initTts {
                 Log.i(TAG, "TTS ready, speaking greeting")
-                voice.speak("Sightline ready. Tap the microphone, then say what you need. Like, find a chair.")
+                voice.speak("Sightline is ready. Say what you need. For example, say find a chair, or, what is around me.")
+                viewModelScope.launch {
+                    var startedMs = 0L
+                    while (!voice.isSpeaking.value && startedMs < 3000) { delay(150); startedMs += 150 }
+                    var quietMs = 0L
+                    while (voice.isSpeaking.value && quietMs < 12000) { delay(200); quietMs += 200 }
+                    if (_uiState.value.phase == GoalMode.IDLE) {
+                        Log.i(TAG, "Greeting done - auto-listening")
+                        startListening()
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "initVoice CRASHED", e)
@@ -264,6 +298,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             speakAndDisplay(SpokenResponse(
                 text = "I didn't understand. Try: find a chair, or, what's around me."
             ))
+            autoRelisten()
             return
         }
 
@@ -339,6 +374,33 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
 
     // --- Actions ---
 
+    fun setAppVisible(visible: Boolean) {
+        appVisible = visible
+        if (!visible) stopListening()
+        if (visible && _uiState.value.phase == GoalMode.IDLE) autoRelisten()
+    }
+
+    /**
+     * Hands-free loop: waits for TTS to quiet down, then re-arms STT
+     * so the user can keep talking without touching the screen. Only
+     * re-arms while the app is on screen and idle (otherwise the wake
+     * word service owns the mic).
+     */
+    private fun autoRelisten() {
+        viewModelScope.launch {
+            var waitedMs = 0L
+            while (voice.isSpeaking.value && waitedMs < 8000) {
+                delay(200)
+                waitedMs += 200
+            }
+            if (!appVisible) return@launch
+            if (_uiState.value.phase != GoalMode.IDLE) return@launch
+            if (voice.isListening.value) return@launch
+            Log.i(TAG, "autoRelisten: re-arming STT")
+            startListening()
+        }
+    }
+
     fun startListening() {
         Log.i(TAG, "startListening called")
         voice.startListening()
@@ -367,6 +429,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         )
         voice.stopSpeaking()
         voice.stopListening()
+        autoRelisten()
     }
 
     fun toggleDebug() {
