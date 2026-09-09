@@ -1,4 +1,4 @@
-# SIGHTLINE — Freebuff Edition
+# SIGHTLINE
 
 **"Don't just see. Understand."**
 
