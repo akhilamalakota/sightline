@@ -134,6 +134,53 @@ class ResponseBuilder {
     }
 
     /**
+     * Always-on approach warning — an object is moving toward the user.
+     */
+    fun buildApproachWarning(obj: DetectedObject): SpokenResponse {
+        val name = obj.label.replaceFirstChar { it.uppercase() }
+        val distText = obj.distanceMeters?.let { spatial.metersWord(it) }
+            ?: spatial.distanceWord(obj.distanceZone)
+        return SpokenResponse(
+            text = "$name approaching from ${spatial.directionWord(obj.direction)}, $distText.",
+            isHapticAlert = true,
+        )
+    }
+
+    /**
+     * Traffic-light color announcement — spoken once when the light changes.
+     */
+    fun buildTrafficLightResponse(color: TrafficLightColor): SpokenResponse {
+        return when (color) {
+            TrafficLightColor.GREEN -> SpokenResponse(
+                text = "Green light. Safe to cross.",
+                isHapticAlert = true,
+            )
+            TrafficLightColor.RED -> SpokenResponse(
+                text = "Red light. Wait.",
+                isHapticAlert = true,
+            )
+            TrafficLightColor.YELLOW -> SpokenResponse(
+                text = "Yellow light. Get ready to move.",
+            )
+            TrafficLightColor.UNKNOWN -> SpokenResponse(text = "")
+        }
+    }
+
+    /**
+     * OCR result — what the text in front of the user says.
+     */
+    fun buildOcrResponse(text: String): SpokenResponse {
+        val cleaned = text.trim().replace(Regex("\\s+"), " ")
+        if (cleaned.isEmpty()) {
+            return SpokenResponse(
+                text = "I couldn't find any readable text. Point the camera at the text, and say read this again."
+            )
+        }
+        val shortened = if (cleaned.length > 200) cleaned.take(200) + "…" else cleaned
+        return SpokenResponse(text = "It says: $shortened")
+    }
+
+    /**
      * Low confidence response.
      */
     fun buildLowConfidenceResponse(bestGuess: String): SpokenResponse {

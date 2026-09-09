@@ -19,6 +19,10 @@ fun DetectedObject.distanceDisplay(): String = when {
 /** Confidence as a rounded percentage string, e.g. "87%". */
 fun DetectedObject.confidencePercent(): String = "${(confidence * 100).roundToInt()}%"
 
+/** Short color suffix for traffic lights, e.g. " · GREEN" ("" otherwise). */
+fun DetectedObject.trafficLightSuffix(): String =
+    trafficLightColor?.takeUnless { it == TrafficLightColor.UNKNOWN }?.let { " · ${it.name}" } ?: ""
+
 /** Where an object is horizontally in the camera frame. */
 enum class Direction { LEFT, CENTER, RIGHT }
 
@@ -26,10 +30,16 @@ enum class Direction { LEFT, CENTER, RIGHT }
 enum class DistanceZone { NEAR, MID, FAR }
 
 /** What the system is currently trying to do. */
-enum class GoalMode { IDLE, FIND, GUIDE, UNDERSTAND, REMEMBER }
+enum class GoalMode { IDLE, FIND, GUIDE, UNDERSTAND, REMEMBER, READ }
 
 /** Status of the path ahead. */
 enum class PathStatus { CLEAR, BLOCKED, UNKNOWN }
+
+/** Whether a tracked object is getting closer, staying put, or moving away. */
+enum class ApproachState { APPROACHING, STATIC, RECEDING }
+
+/** Dominant lit color of a traffic light, classified from the bbox crop. */
+enum class TrafficLightColor { RED, YELLOW, GREEN, UNKNOWN }
 
 /**
  * A single detected object from the vision pipeline.
@@ -41,6 +51,8 @@ data class DetectedObject(
     val distanceMeters: Float?, // real metres if ARCore depth available, null otherwise
     val distanceZone: DistanceZone,
     val direction: Direction,
+    val approach: ApproachState = ApproachState.STATIC,
+    val trafficLightColor: TrafficLightColor? = null,
 ) {
     /** Human-readable position, e.g. "chair — mid — left" */
     fun describe(): String =

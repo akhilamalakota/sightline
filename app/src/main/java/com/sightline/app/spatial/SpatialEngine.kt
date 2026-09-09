@@ -1,10 +1,12 @@
 package com.sightline.app.spatial
 
+import com.sightline.app.ApproachState
 import com.sightline.app.DetectedObject
 import com.sightline.app.Direction
 import com.sightline.app.DistanceZone
 import com.sightline.app.PathStatus
 import com.sightline.app.SpatialWorldModel
+import com.sightline.app.TrafficLightColor
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -37,6 +39,8 @@ class SpatialEngine {
         var framesSeen: Int,       // count of associated detections
         var framesSinceSeen: Int,  // missed frames since last association
         var confirmed: Boolean,    // true once seen enough to trust
+        var heightHistory: MutableList<Float> = mutableListOf(),  // smoothed bbox heights, capped
+        var trafficColor: TrafficLightColor? = null,              // latest classified color
     )
 
     private val tracks = mutableListOf<Track>()
@@ -80,6 +84,12 @@ class SpatialEngine {
                 track.framesSeen++
                 track.framesSinceSeen = 0
                 if (track.framesSeen >= CONFIRM_FRAMES) track.confirmed = true
+                // Keep a bounded history of smoothed heights for approach detection.
+                track.heightHistory.add(track.bbox[3] - track.bbox[1])
+                if (track.heightHistory.size > APPROACH_HISTORY) {
+                    track.heightHistory.removeAt(0)
+                }
+                if (d.trafficLightColor != null) track.trafficColor = d.trafficLightColor
             } else {
                 track.framesSinceSeen++
             }
@@ -149,6 +159,8 @@ class SpatialEngine {
                     distanceMeters = estimateMeters(track.label, heightFraction, frameHeightPx),
                     distanceZone = distanceZone,
                     direction = direction,
+                    approach = approachState(track),
+                    trafficLightColor = track.trafficColor,
                 )
             )
         }
@@ -237,6 +249,22 @@ class SpatialEngine {
     }
 
     /**
+     * Classify a track's approach state from its recent height trend.
+     * Growing bboxes mean the object is getting closer to the camera.
+     */
+    private fun approachState(track: Track): ApproachState {
+        val history = track.heightHistory
+        if (history.size < APPROACH_MIN_SAMPLES) return ApproachState.STATIC
+        if (track.framesSinceSeen != 0) return ApproachState.STATIC
+        val deltaPerFrame = (history.last() - history.first()) / (history.size - 1)
+        return when {
+            deltaPerFrame > APPROACH_THRESHOLD -> ApproachState.APPROACHING
+            deltaPerFrame < -APPROACH_THRESHOLD -> ApproachState.RECEDING
+            else -> ApproachState.STATIC
+        }
+    }
+
+    /**
      * Direction word for natural speech.
      */
     fun directionWord(d: Direction): String = when (d) {
@@ -269,6 +297,9 @@ class SpatialEngine {
         private const val STICKY_FRAMES = 8 // ~1.6 s at 200 ms / frame
         private const val MAX_ASSOCIATION_DIST = 0.3f
         private const val MAX_TRACKS = 12
+        private const val APPROACH_HISTORY = 8
+        private const val APPROACH_MIN_SAMPLES = 4
+        private const val APPROACH_THRESHOLD = 0.008f
 
         /** Labels that count as obstacles for path-blocking. */
         private val OBSTACLE_LABELS = setOf(

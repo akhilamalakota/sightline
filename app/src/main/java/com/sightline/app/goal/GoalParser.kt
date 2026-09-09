@@ -40,6 +40,12 @@ class GoalParser {
             listOf("where did i put", "where's my", "where is my", "did you see my",
                 "recall", "what did you see")
         ),
+        IntentPattern(
+            GoalMode.READ,
+            listOf("read this", "read the", "read that", "read it", "read what",
+                "read the sign", "read the text", "read the letter", "read the menu",
+                "read the label", "read the paper", "read the board")
+        ),
     )
 
     /** Common objects the system can find. Extend as needed. */
@@ -106,6 +112,11 @@ class GoalParser {
         // For UNDERSTAND, no target needed
         if (matchedMode == GoalMode.UNDERSTAND && matchedTarget.isEmpty()) {
             matchedTarget = "surroundings"
+        }
+
+        // For READ, the "text" itself is the default target
+        if (matchedMode == GoalMode.READ && matchedTarget.isEmpty()) {
+            matchedTarget = "text"
         }
 
         if (matchedTarget.isEmpty()) return null

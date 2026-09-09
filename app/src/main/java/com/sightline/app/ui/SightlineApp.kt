@@ -47,6 +47,7 @@ import com.sightline.app.DistanceZone
 import com.sightline.app.GoalMode
 import com.sightline.app.confidencePercent
 import com.sightline.app.distanceDisplay
+import com.sightline.app.trafficLightSuffix
 import java.util.concurrent.Executors
 
 private const val TAG = "SightlineUI"
@@ -97,6 +98,7 @@ fun SightlineApp(viewModel: SightlineViewModel) {
                 GoalMode.GUIDE -> Color(0xFF4CAF50)
                 GoalMode.UNDERSTAND -> Color(0xFF9C27B0)
                 GoalMode.REMEMBER -> Color(0xFFFF9800)
+                GoalMode.READ -> Color(0xFF00BCD4)
                 GoalMode.IDLE -> Color.Gray
             }
             Card(
@@ -230,7 +232,7 @@ private fun DistanceGuideOverlay(target: DetectedObject?) {
             }
         ) {
             Text(
-                text = "${target.label} · ${target.distanceDisplay()} · ${target.confidencePercent()}",
+                text = "${target.label} · ${target.distanceDisplay()} · ${target.confidencePercent()}${target.trafficLightSuffix()}",
                 color = Color.Black,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -282,7 +284,7 @@ private fun ObjectTagsOverlay(objects: List<DetectedObject>) {
                 DistanceZone.FAR -> Color(0xFF69F0AE)
             }
 
-            val text = "${obj.label} · ${obj.distanceDisplay()} · ${obj.confidencePercent()}"
+            val text = "${obj.label} · ${obj.distanceDisplay()} · ${obj.confidencePercent()}${obj.trafficLightSuffix()}"
             val measured = textMeasurer.measure(
                 text = AnnotatedString(text),
                 style = TextStyle(fontSize = 10.sp),

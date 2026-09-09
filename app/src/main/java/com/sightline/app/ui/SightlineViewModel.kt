@@ -5,9 +5,14 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.Tasks
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.sightline.app.*
 import com.sightline.app.camera.FrameConverter
 import com.sightline.app.detection.ObjectDetector
+import com.sightline.app.detection.TrafficLightClassifier
 import com.sightline.app.goal.GoalParser
 import com.sightline.app.memory.MemoryStore
 import com.sightline.app.output.ResponseBuilder
@@ -21,12 +26,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.abs
 
 private const val TAG = "SightlineVM"
 
 private const val ARRIVAL_METERS = 1.2f
 private const val ARRIVAL_REPEAT_MS = 8_000L
 private val ARRIVAL_MODES = setOf(GoalMode.FIND, GoalMode.GUIDE)
+private const val APPROACH_REPEAT_MS = 10_000L
+private const val LOCATE_HAPTIC_MIN_MS = 700L
 
 class SightlineViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -44,6 +52,19 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     private var lastArrivalAnnounceMs = 0L
     private var lastSpokenMeterFloor = -1
     private var lastSpokenZone: DistanceZone? = null
+
+    // --- Always-on radar state ---
+    private val lastApproachAnnounceMs = HashMap<String, Long>()
+    private var lastTrafficColor: TrafficLightColor? = null
+
+    // --- OCR (READ mode) ---
+    @Volatile private var ocrFired = false
+    private val textRecognizer by lazy {
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    }
+
+    // --- Haptic locating ---
+    private var lastLocateHapticMs = 0L
 
     // --- UI State ---
     data class UiState(
@@ -105,10 +126,17 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
 
             val frameHeightPx = bitmap.height
             val detections = detector.detect(bitmap)
-            bitmap.recycle()
+
+            val annotated = if (detections.any { it.label == "traffic light" }) {
+                detections.map { d ->
+                    if (d.label == "traffic light") {
+                        d.copy(trafficLightColor = TrafficLightClassifier.classify(bitmap, d.bbox))
+                    } else d
+                }
+            } else detections
 
             val targetLabel = _uiState.value.currentGoal?.target
-            val world = spatial.buildWorldModel(detections, targetLabel, frameHeightPx)
+            val world = spatial.buildWorldModel(annotated, targetLabel, frameHeightPx)
 
             _uiState.value = _uiState.value.copy(
                 detectedObjects = world.objects,
@@ -117,11 +145,24 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
                 pathStatus = world.pathStatus,
             )
 
-            // Process active goal
             val state = _uiState.value
+
+            var bitmapOwnedByOcr = false
+            if (state.phase == GoalMode.READ && !ocrFired) {
+                ocrFired = true
+                bitmapOwnedByOcr = true
+                runOcr(bitmap)
+            }
+            if (!bitmapOwnedByOcr) bitmap.recycle()
+
+            // Process active goal
             if (state.phase != GoalMode.IDLE && state.currentGoal != null) {
                 processActiveGoal(state.currentGoal, world)
             }
+
+            // Always-on radar (independent of any goal)
+            checkApproachWarnings(world, state)
+            checkTrafficLight(world)
 
             // Telemetry
             sendTelemetry(state, world)
@@ -165,6 +206,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             }
             GoalMode.UNDERSTAND -> responseBuilder.buildUnderstandResponse(world)
             GoalMode.REMEMBER -> responseBuilder.buildNoDetectionResponse()
+            GoalMode.READ -> return
             GoalMode.IDLE -> return
         }
 
@@ -173,6 +215,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         // While approaching (not yet arrived) keep the user updated on distance.
         if (goal.mode in ARRIVAL_MODES && !arrived) {
             speakApproachProgress(goal, target, dist)
+            if (target != null) hapticLocate(target)
         }
     }
 
@@ -231,6 +274,8 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         lastSpokenMeterFloor = -1
         lastSpokenZone = null
         lastArrivalAnnounceMs = 0L
+        lastApproachAnnounceMs.clear()
+        if (goal.mode == GoalMode.READ) ocrFired = false
 
         _uiState.value = _uiState.value.copy(
             currentGoal = goal,
@@ -240,6 +285,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
                 GoalMode.GUIDE -> "GUIDING: ${goal.target.uppercase()}"
                 GoalMode.UNDERSTAND -> "SCANNING"
                 GoalMode.REMEMBER -> "REMEMBERING: ${goal.target.uppercase()}"
+                GoalMode.READ -> "READING TEXT"
                 GoalMode.IDLE -> "What do you need?"
             }
         )
@@ -253,6 +299,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             GoalMode.FIND -> "Looking for ${goal.target}."
             GoalMode.GUIDE -> "Guiding you to ${goal.target}."
             GoalMode.UNDERSTAND -> "Scanning your surroundings."
+            GoalMode.READ -> "Reading what's in front of you."
             else -> ""
         }
         if (confirmText.isNotEmpty()) {
@@ -361,6 +408,98 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             val v = getApplication<Application>()
                 .getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
             v.vibrate(150)
+        } catch (_: Exception) { }
+    }
+
+    /**
+     * Always-on approach radar: announces when any non-target object starts
+     * moving toward the user, throttled per label.
+     */
+    private fun checkApproachWarnings(world: SpatialWorldModel, state: UiState) {
+        if (System.currentTimeMillis() - lastSpokenTimeMs < 2500) return
+        val target = state.targetLock
+        val candidate = world.objects
+            .filter {
+                it.approach == ApproachState.APPROACHING &&
+                    it.label != "traffic light" &&
+                    it !== target &&
+                    (it.distanceZone != DistanceZone.FAR || (it.distanceMeters ?: 99f) < 4f)
+            }
+            .minByOrNull { it.distanceMeters ?: Float.MAX_VALUE }
+            ?: return
+        val now = System.currentTimeMillis()
+        if (now - (lastApproachAnnounceMs[candidate.label] ?: 0L) < APPROACH_REPEAT_MS) return
+        lastApproachAnnounceMs[candidate.label] = now
+        speakAndDisplay(responseBuilder.buildApproachWarning(candidate))
+    }
+
+    /**
+     * Traffic-light awareness: announces once each time the dominant light
+     * color changes.
+     */
+    private fun checkTrafficLight(world: SpatialWorldModel) {
+        val light = world.objects.firstOrNull {
+            it.label == "traffic light" &&
+                it.trafficLightColor != null &&
+                it.trafficLightColor != TrafficLightColor.UNKNOWN
+        } ?: return
+        val color = light.trafficLightColor!!
+        if (color == lastTrafficColor) return
+        lastTrafficColor = color
+        val response = responseBuilder.buildTrafficLightResponse(color)
+        if (response.text.isNotEmpty()) speakAndDisplay(response)
+    }
+
+    /**
+     * One-shot OCR of the current frame for READ mode. Owns the bitmap —
+     * recycles it on the IO thread after recognition completes.
+     */
+    private fun runOcr(bitmap: android.graphics.Bitmap) {
+        viewModelScope.launch {
+            val text = withContext(Dispatchers.IO) {
+                try {
+                    val image = InputImage.fromBitmap(bitmap, 0)
+                    val result = Tasks.await(textRecognizer.process(image))
+                    bitmap.recycle()
+                    result.text
+                } catch (e: Exception) {
+                    Log.e(TAG, "OCR failed", e)
+                    bitmap.recycle()
+                    ""
+                }
+            }
+            speakAndDisplay(responseBuilder.buildOcrResponse(text))
+            returnToIdle()
+        }
+    }
+
+    /**
+     * Haptic locating: short pulses that encode how centered and how close
+     * the tracked target is. Stronger buzz = more aligned + closer.
+     */
+    private fun hapticLocate(target: DetectedObject) {
+        val now = System.currentTimeMillis()
+        if (now - lastLocateHapticMs < LOCATE_HAPTIC_MIN_MS) return
+        val centerX = (target.bbox[0] + target.bbox[2]) / 2f
+        val alignment = 1f - abs(centerX - 0.5f) * 2f
+        if (alignment < 0.5f) return
+        val closeness = target.distanceMeters?.let { (1f - it / 2.5f).coerceIn(0.1f, 1f) }
+            ?: when (target.distanceZone) {
+                DistanceZone.NEAR -> 0.9f
+                DistanceZone.MID -> 0.5f
+                DistanceZone.FAR -> 0.3f
+            }
+        lastLocateHapticMs = now
+        val durationMs = (60L + 140L * closeness).toLong()
+        try {
+            val v = getApplication<Application>()
+                .getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            v.vibrate(
+                android.os.VibrationEffect.createOneShot(
+                    durationMs,
+                    android.os.VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
         } catch (_: Exception) { }
     }
 
