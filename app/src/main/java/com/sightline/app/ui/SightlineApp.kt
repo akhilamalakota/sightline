@@ -1,0 +1,349 @@
+package com.sightline.app.ui
+
+import android.util.Log
+import android.view.ViewGroup
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.sightline.app.DetectedObject
+import com.sightline.app.Direction
+import com.sightline.app.DistanceZone
+import com.sightline.app.GoalMode
+import java.util.concurrent.Executors
+
+private const val TAG = "SightlineUI"
+
+@Composable
+fun SightlineApp(viewModel: SightlineViewModel) {
+    val state by viewModel.uiState.collectAsState()
+    val isIdle = state.phase == GoalMode.IDLE
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        // Camera preview (full screen)
+        CameraPreview(viewModel)
+
+        // Top gradient scrim (for status text)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
+                    )
+                )
+        )
+
+        // Status text (top center, minimal)
+        Text(
+            text = state.statusMessage,
+            color = Color.White.copy(alpha = 0.9f),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 40.dp)
+        )
+
+        // Goal badge (top left, small pill)
+        AnimatedVisibility(
+            visible = !isIdle,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 80.dp)
+        ) {
+            val goalColor = when (state.phase) {
+                GoalMode.FIND -> Color(0xFF2196F3)
+                GoalMode.GUIDE -> Color(0xFF4CAF50)
+                GoalMode.UNDERSTAND -> Color(0xFF9C27B0)
+                GoalMode.REMEMBER -> Color(0xFFFF9800)
+                GoalMode.IDLE -> Color.Gray
+            }
+            Card(
+                colors = CardDefaults.cardColors(containerColor = goalColor.copy(alpha = 0.85f)),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text(
+                    text = state.phase.name,
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
+
+        // Object tags (subtle, small)
+        ObjectTagsOverlay(state.detectedObjects)
+
+        // Bottom gradient scrim
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                    )
+                )
+        )
+
+        // Response caption (bottom, toast-style)
+        AnimatedVisibility(
+            visible = state.lastResponse.isNotEmpty(),
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 140.dp)
+                .padding(horizontal = 24.dp)
+        ) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Black.copy(alpha = 0.75f)
+                ),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text(
+                    text = state.lastResponse,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                )
+            }
+        }
+
+        // Mic button (bottom center, camera app style)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)
+        ) {
+            MicButton(
+                isListening = state.isListening,
+                onClick = {
+                    if (!state.isListening) {
+                        viewModel.startListening()
+                    } else {
+                        viewModel.stopListening()
+                    }
+                },
+            )
+        }
+
+        // Debug overlay (tap to toggle)
+        if (state.showDebug) {
+            DebugOverlay(state, modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp))
+        }
+    }
+}
+
+/**
+ * Minimal object tags — small, translucent, positioned by bbox.
+ */
+@Composable
+private fun ObjectTagsOverlay(objects: List<DetectedObject>) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        objects.take(5).forEach { obj ->
+            val xFraction = (obj.bbox[0] + obj.bbox[2]) / 2f
+            val yFraction = (obj.bbox[1] + obj.bbox[3]) / 2f
+
+            val distanceColor = when (obj.distanceZone) {
+                DistanceZone.NEAR -> Color(0xFFFF5252)
+                DistanceZone.MID -> Color(0xFFFFD740)
+                DistanceZone.FAR -> Color(0xFF69F0AE)
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = when {
+                    xFraction < 0.33f -> Alignment.CenterStart
+                    xFraction > 0.66f -> Alignment.CenterEnd
+                    else -> Alignment.Center
+                },
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Black.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.padding(4.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(distanceColor)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = obj.label,
+                            color = Color.White,
+                            fontSize = 10.sp,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CameraPreview(viewModel: SightlineViewModel) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+    var cameraError by remember { mutableStateOf<String?>(null) }
+
+    AndroidView(
+        factory = { ctx ->
+            PreviewView(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                )
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+
+                try {
+                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                    cameraProviderFuture.addListener({
+                        try {
+                            val cameraProvider = cameraProviderFuture.get()
+
+                            val preview = androidx.camera.core.Preview.Builder().build().also {
+                                it.setSurfaceProvider(surfaceProvider)
+                            }
+
+                            val imageAnalysis = ImageAnalysis.Builder()
+                                .setTargetResolution(android.util.Size(640, 480))
+                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                .build()
+                                .also { analysis ->
+                                    analysis.setAnalyzer(cameraExecutor) { imageProxy ->
+                                        try {
+                                            viewModel.onCameraFrame(imageProxy)
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Frame processing error", e)
+                                            imageProxy.close()
+                                        }
+                                    }
+                                }
+
+                            cameraProvider.unbindAll()
+                            cameraProvider.bindToLifecycle(
+                                lifecycleOwner,
+                                CameraSelector.DEFAULT_BACK_CAMERA,
+                                preview,
+                                imageAnalysis,
+                            )
+                            Log.i(TAG, "Camera bound OK")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Camera binding failed", e)
+                            cameraError = "Camera failed: ${e.message}"
+                        }
+                    }, ContextCompat.getMainExecutor(ctx))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Camera provider init failed", e)
+                    cameraError = "Camera init failed: ${e.message}"
+                }
+            }
+        },
+        modifier = Modifier.fillMaxSize(),
+    )
+
+    cameraError?.let { error ->
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color.Black),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text = error, color = Color.Red, fontSize = 14.sp)
+        }
+    }
+}
+
+@Composable
+private fun MicButton(
+    isListening: Boolean,
+    onClick: () -> Unit,
+) {
+    val bgColor = if (isListening) Color(0xFFE53935) else Color.White
+    val iconColor = if (isListening) Color.White else Color.Black
+
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .size(64.dp)
+            .clip(CircleShape),
+        colors = ButtonDefaults.buttonColors(containerColor = bgColor),
+        shape = CircleShape,
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Icon(
+            imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
+            contentDescription = if (isListening) "Stop" else "Speak",
+            modifier = Modifier.size(28.dp),
+            tint = iconColor,
+        )
+    }
+}
+
+@Composable
+private fun DebugOverlay(
+    state: SightlineViewModel.UiState,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.width(180.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.85f)),
+        shape = RoundedCornerShape(6.dp),
+    ) {
+        Column(modifier = Modifier.padding(6.dp)) {
+            Text("DEBUG", color = Color(0xFF00FF00), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("Phase: ${state.phase.name}", color = Color(0xFF00FF00), fontSize = 9.sp)
+            Text("Objects: ${state.objectCount}", color = Color(0xFF00FF00), fontSize = 9.sp)
+            Text("Path: ${state.pathStatus.name}", color = Color(0xFF00FF00), fontSize = 9.sp)
+            state.targetLock?.let { target ->
+                Text("Lock: ${target.label}", color = Color(0xFF00FF00), fontSize = 9.sp)
+            }
+        }
+    }
+}

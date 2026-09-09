@@ -1,0 +1,33 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+*.aab
+*.keystore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Node
+node_modules/
+dashboard/node_modules/
+dashboard/client/node_modules/
+dashboard/client/dist/
+
+# Model artifacts (regenerate with: python export_model.py)
+models/yolov8n.pt
+models/yolov8n.onnx
+models/*.tflite
+models/yolov8n_saved_model/
+models/yolov8n_savedmodel/
+models/calibration_image_sample_data_20x128x128x3_float32.npy
+
+# Misc
+download/
+*.log
+.DS_Store
+Thumbs.db

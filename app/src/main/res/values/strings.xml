@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sightline</string>
+    <string name="what_do_you_need">What do you need?</string>
+    <string name="listening">Listening…</string>
+    <string name="scanning">Scanning…</string>
+    <string name="finding">FINDING</string>
+    <string name="guiding">GUIDING</string>
+    <string name="permission_needed">Sightline needs camera and microphone access to work. Please enable them in settings.</string>
+</resources>

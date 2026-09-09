@@ -1,0 +1,19 @@
+{
+  "name": "sightline-command-center",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"node server.js\" \"cd client && npm run dev\"",
+    "server": "node server.js",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
