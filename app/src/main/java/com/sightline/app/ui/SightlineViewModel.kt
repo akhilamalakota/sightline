@@ -19,7 +19,9 @@ import com.sightline.app.output.ResponseBuilder
 import com.sightline.app.output.VoiceManager
 import com.sightline.app.spatial.SpatialEngine
 import com.sightline.app.telemetry.TelemetryClient
+import com.sightline.app.wake.WakeWordService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -70,6 +72,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     // --- UI State ---
     @Volatile private var appVisible = true
     @Volatile private var arrivalResetScheduled = false
+    private var wakeStartJob: Job? = null
 
     data class UiState(
         val phase: GoalMode = GoalMode.IDLE,
@@ -374,10 +377,35 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
 
     // --- Actions ---
 
+    /**
+     * Single source of truth for mic ownership.
+     *
+     * Foreground  -> in-app STT owns the mic; the wake listener is released FIRST
+     *                (before any STT start) so Google's recognizer never shares the
+     *                stream with Vosk.
+     * Background  -> STT is stopped first, then after a 500ms grace the wake
+     *                listener arms. The grace lets the audio HAL fully release the
+     *                mic; arming immediately (the old onStop behaviour) gave Vosk a
+     *                poisoned stream that only ever decoded "hey" (repro 11:53).
+     */
     fun setAppVisible(visible: Boolean) {
         appVisible = visible
-        if (!visible) stopListening()
-        if (visible && _uiState.value.phase == GoalMode.IDLE) autoRelisten()
+        if (visible) {
+            cancelPendingWakeStart()
+            WakeWordService.stopCapture(getApplication())
+            if (_uiState.value.phase == GoalMode.IDLE) autoRelisten()
+        } else {
+            stopListening()
+            wakeStartJob = viewModelScope.launch {
+                delay(500)
+                if (!appVisible) WakeWordService.startCapture(getApplication())
+            }
+        }
+    }
+
+    private fun cancelPendingWakeStart() {
+        wakeStartJob?.cancel()
+        wakeStartJob = null
     }
 
     /**
@@ -388,10 +416,23 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
      */
     private fun autoRelisten() {
         viewModelScope.launch {
-            var waitedMs = 0L
-            while (voice.isSpeaking.value && waitedMs < 8000) {
+            var warmUpMs = 0L
+            while (!voice.isVoiceReady && warmUpMs < 10000) {
+                delay(150)
+                warmUpMs += 150
+            }
+            // TTS onStart is async: give a just-queued response time to begin
+            // speaking before waiting for it to finish, so the launch greeting
+            // is never cut off by an early STT re-arm.
+            var speakingMs = 0L
+            while (!voice.isSpeaking.value && speakingMs < 2000) {
+                delay(100)
+                speakingMs += 100
+            }
+            var quietMs = 0L
+            while (voice.isSpeaking.value && quietMs < 12000) {
                 delay(200)
-                waitedMs += 200
+                quietMs += 200
             }
             if (!appVisible) return@launch
             if (_uiState.value.phase != GoalMode.IDLE) return@launch
@@ -402,6 +443,10 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun startListening() {
+        if (!appVisible) {
+            Log.w(TAG, "startListening ignored: app not visible")
+            return
+        }
         Log.i(TAG, "startListening called")
         voice.startListening()
         _uiState.value = _uiState.value.copy(statusMessage = "Listening…")

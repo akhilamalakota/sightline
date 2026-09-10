@@ -32,9 +32,22 @@ class VoiceManager(private val context: Context) {
     private val _lastTranscript = MutableStateFlow("")
     val lastTranscript: StateFlow<String> = _lastTranscript
 
+    /** True once TTS and STT are both initialized. Lets callers wait for warm-up before re-arming the mic. */
+    val isVoiceReady: Boolean get() = ttsReady && speechRecognizer != null
+
     private var onResult: ((String) -> Unit)? = null
     private var retryCount = 0
     private var speechRecognizer: SpeechRecognizer? = null
+
+    /**
+     * True while the app wants STT to be active. Guards against double-starts
+     * (which OPPO rejects with RECOGNIZER_BUSY) and lets stale retries die as
+     * soon as the app leaves the screen.
+     */
+    @Volatile private var sttActive = false
+
+    /** Currently scheduled auto-restart, so it can be cancelled on stop. */
+    private var pendingRetry: Runnable? = null
 
     // --- TTS ---
 
@@ -120,11 +133,10 @@ class VoiceManager(private val context: Context) {
                 override fun onError(error: Int) {
                     Log.e(TAG, "STT error: $error")
                     _isListening.value = false
-                    // Error 13 = SERVICE_BUSY (TTS still speaking), retry after longer delay
-                    if (error == 13 && retryCount < 3) {
-                        retryCount++
-                        Log.i(TAG, "Retrying STT in 2s (attempt $retryCount)...")
-                        handler.postDelayed({ startListeningInternal() }, 2000)
+                    // Error 13 = SERVICE_BUSY (TTS still speaking); 8 = BUSY (double-start).
+                    // Retry while STT is still wanted, so a hiccup doesn't kill hands-free mode.
+                    if ((error == 13 || error == 8) && retryCount < 3) {
+                        scheduleRetry("STT error $error")
                     }
                 }
                 override fun onResults(results: Bundle?) {
@@ -135,9 +147,9 @@ class VoiceManager(private val context: Context) {
                     if (transcript.isNotBlank()) {
                         onResult?.invoke(transcript)
                     } else {
-                        // No speech detected — try again
+                        // No speech detected — try again while STT is still wanted
                         Log.w(TAG, "STT empty result, retrying...")
-                        handler.postDelayed({ startListeningInternal() }, 500)
+                        scheduleRetry("empty result")
                     }
                 }
                 override fun onPartialResults(partialResults: Bundle?) {}
@@ -155,8 +167,13 @@ class VoiceManager(private val context: Context) {
      * This is the key fix for OPPO/TTS+STT audio conflict.
      */
     fun startListening() {
+        if (sttActive) {
+            Log.i(TAG, "startListening: already active, skipping")
+            return
+        }
         Log.i(TAG, "startListening: stopping TTS first")
         retryCount = 0
+        sttActive = true
         stopSpeaking()
         // Wait longer for audio system to fully release
         handler.postDelayed({
@@ -165,6 +182,10 @@ class VoiceManager(private val context: Context) {
     }
 
     private fun startListeningInternal() {
+        if (!sttActive) {
+            Log.w(TAG, "startListeningInternal: STT no longer wanted, skipping")
+            return
+        }
         if (speechRecognizer == null) {
             Log.w(TAG, "startListeningInternal: speechRecognizer is null")
             return
@@ -182,10 +203,28 @@ class VoiceManager(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "STT start crashed", e)
             _isListening.value = false
+            scheduleRetry("STT start crashed")
         }
     }
 
+    private fun scheduleRetry(why: String) {
+        if (!sttActive) {
+            Log.i(TAG, "scheduleRetry: STT not wanted ($why), dropping retry")
+            return
+        }
+        pendingRetry?.let { handler.removeCallbacks(it) }
+        retryCount++
+        val delayMs = if (retryCount < 3) 2000L else 4000L
+        Log.i(TAG, "Retrying STT in ${delayMs}ms ($why, attempt $retryCount)")
+        val runnable = Runnable { startListeningInternal() }
+        pendingRetry = runnable
+        handler.postDelayed(runnable, delayMs)
+    }
+
     fun stopListening() {
+        sttActive = false
+        pendingRetry?.let { handler.removeCallbacks(it) }
+        pendingRetry = null
         try { speechRecognizer?.stopListening() } catch (_: Exception) {}
         _isListening.value = false
     }

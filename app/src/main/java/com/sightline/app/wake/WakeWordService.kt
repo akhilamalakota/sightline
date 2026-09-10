@@ -49,6 +49,9 @@ class WakeWordService : Service() {
         private const val ACTION_START_CAPTURE = "com.sightline.freebuff.wake.START"
         private const val ACTION_STOP_CAPTURE = "com.sightline.freebuff.wake.STOP"
 
+        private const val PREFS_NAME = "sightline_prefs"
+        private const val KEY_CAPTURE_ENABLED = "wake_capture_enabled"
+
         /**
          * Offline model bundled in app/src/main/assets/model-en/
          * (vosk-model-small-en-us-0.15). Grammar mode restricts recognition to
@@ -60,11 +63,21 @@ class WakeWordService : Service() {
 
         private const val SAMPLE_RATE = 16000.0f
 
+        /**
+         * No "[unk]" token on purpose: the model has no "sightline" word in its
+         * vocabulary, so with [unk] present the audio after "hey sight" is
+         * swallowed as unknown and we only ever see "hey" (live logs: partial
+         * "hey, hey, [unk]"). Keeping ONLY in-vocab tokens forces Vosk to map
+         * "hey sightline" onto "hey sight" / "sight line", and the substring
+         * matcher above fires on the instant "sight" appears.
+         */
         private const val GRAMMAR_WAKE =
-            """["hey sight line", "hey sightline", "sight line", "sightline", "[unk]"]"""
+            """["hey sight line", "hey sight", "sight line", "sight"]"""
 
         fun startCapture(context: Context) =
             try {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_CAPTURE_ENABLED, true).apply()
                 context.startForegroundService(Intent(context, WakeWordService::class.java).setAction(ACTION_START_CAPTURE))
             } catch (e: Exception) {
                 Log.e(TAG, "startCapture failed", e)
@@ -72,6 +85,8 @@ class WakeWordService : Service() {
 
         fun stopCapture(context: Context) =
             try {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_CAPTURE_ENABLED, false).apply()
                 context.startForegroundService(Intent(context, WakeWordService::class.java).setAction(ACTION_STOP_CAPTURE))
             } catch (e: Exception) {
                 Log.w(TAG, "stopCapture failed", e)
@@ -107,10 +122,17 @@ class WakeWordService : Service() {
             else -> {
                 Log.i(TAG, "Started (no action). Capturing=${capturing}")
                 if (Build.VERSION.SDK_INT >= 26) startForegroundCompat()
+                // START_STICKY restart after the process was killed: restore the
+                // persisted capture state so the wake word comes back on its own.
+                if (captureEnabled()) startWakeCapture()
             }
         }
         return START_STICKY
     }
+
+    private fun captureEnabled(): Boolean =
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_CAPTURE_ENABLED, false)
 
     override fun onDestroy() {
         Log.i(TAG, "onDestroy")
@@ -223,6 +245,11 @@ class WakeWordService : Service() {
 
         override fun onError(e: Exception) {
             Log.w(TAG, "Recognition error: ${e.message}")
+            // Mic contention or a transient glitch: tear down and re-arm cleanly.
+            if (capturing) {
+                stopWakeCapture()
+                if (captureEnabled()) startWakeCapture()
+            }
         }
     }
 
@@ -239,17 +266,16 @@ class WakeWordService : Service() {
     }
 
     /**
-     * Grammar mode guarantees results only ever contain wake-phrase tokens or
-     * [unk], so a match here means the user actually said (part of) the wake
-     * phrase - no open dictation is recognised.
+     * Fires on any decode containing "sight" — covers "hey sightline",
+     * "hey sight line", "hey sight" and bare "sight" alike. Grammar mode
+     * guarantees results only ever contain wake-phrase tokens or [unk],
+     * so a substring match means the user actually said part of the phrase.
      */
     private fun isWakePhrase(raw: String): Boolean {
         val t = raw.lowercase()
             .replace("[unk]", "")
             .trim()
-            .split(Regex("\\s+"))
-            .joinToString(" ")
-        return t.contains("sightline") || t.contains("sight line")
+        return t.contains("sight")
     }
 
     // --- Wake behaviour: buzz, beep, open the app ---

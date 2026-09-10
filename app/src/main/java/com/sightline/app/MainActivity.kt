@@ -25,7 +25,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.sightline.app.ui.SightlineApp
 import com.sightline.app.ui.SightlineViewModel
-import com.sightline.app.wake.WakeWordService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -135,16 +134,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        // App is visible: the in-app STT owns the mic, pause the wake word listener.
-        WakeWordService.stopCapture(this)
+        // ViewModel owns the mic handover: it releases the wake listener first,
+        // then arms in-app STT. No direct WakeWordService calls here.
         vm.setAppVisible(true)
     }
 
     override fun onStop() {
         super.onStop()
-        // App left the screen: wake word listener takes over the mic.
+        // ViewModel stops STT and schedules the wake listener after a 500ms
+        // grace so Vosk never grabs a half-released mic stream.
         vm.setAppVisible(false)
-        WakeWordService.startCapture(this)
     }
 
     /** One-time request for SYSTEM_ALERT_WINDOW so the wake word can bring the app to the front from background/post-lock. */
