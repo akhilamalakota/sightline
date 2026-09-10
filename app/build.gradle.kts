@@ -68,8 +68,8 @@ dependencies {
     // ML Kit Text Recognition (OCR - Phase 6)
     implementation("com.google.mlkit:text-recognition:16.0.0")
 
-    // Porcupine wake word (free Hobby tier - "Hey Sightline")
-    implementation("ai.picovoice:porcupine-android:4.0.2")
+    // Vosk offline wake word (open source, no API key - "Hey Sightline")
+    implementation("com.alphacephei:vosk-android:0.3.75")
 
     // DataStore for memory persistence
     implementation("androidx.datastore:datastore-preferences:1.1.1")

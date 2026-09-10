@@ -16,21 +16,27 @@ import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
-import ai.picovoice.porcupine.Porcupine
-import ai.picovoice.porcupine.PorcupineManager
 import androidx.core.content.ContextCompat
 import com.sightline.app.MainActivity
 import com.sightline.app.R
-import java.io.IOException
+import org.json.JSONObject
+import org.vosk.Model
+import org.vosk.Recognizer
+import org.vosk.android.RecognitionListener
+import org.vosk.android.SpeechService
+import org.vosk.android.StorageService
 
 /**
  * Always-on "Hey Sightline" listener.
  *
- * Runs as a microphone-typed foreground service. Porcupine (on-device wake
- * word engine, free Hobby tier) captures the mic and fires only on the wake
- * word. Capture is enabled when the app is NOT in the foreground (MainActivity
- * sends ACTION_START_CAPTURE / ACTION_STOP_CAPTURE) so the in-app speech
- * recognizer keeps exclusive mic access while the user is talking to the app.
+ * Runs as a microphone-typed foreground service. Vosk (open-source offline
+ * speech recognition, no API key, no account) captures the mic and fires only
+ * on the wake phrase using a restricted grammar: ["hey sight line", ...].
+ * Capture is enabled when the app is NOT in the foreground (MainActivity sends
+ * ACTION_START_CAPTURE / ACTION_STOP_CAPTURE) so the in-app speech recognizer
+ * keeps exclusive mic access while the user is talking to the app.
+ *
+ * 100% offline and free forever - no key, no subscription, no network.
  */
 class WakeWordService : Service() {
 
@@ -44,17 +50,18 @@ class WakeWordService : Service() {
         private const val ACTION_STOP_CAPTURE = "com.sightline.freebuff.wake.STOP"
 
         /**
-         * Access key from https://console.picovoice.ai (free Hobby tier).
-         * Get one, paste it here, rebuild.
+         * Offline model bundled in app/src/main/assets/model-en/
+         * (vosk-model-small-en-us-0.15). Grammar mode restricts recognition to
+         * the wake phrase only, which makes detection near-instant and very
+         * resistant to false positives.
          */
-        private const val ACCESS_KEY = ""
+        private const val MODEL_ASSET = "model-en"
+        private const val MODEL_TARGET = "models"
 
-        /**
-         * Custom wake word trained for "Hey Sightline" at the Picovoice
-         * console. Download the Android .ppn into app/src/main/assets/, or
-         * (temporary) let the service fall back to a built-in keyword.
-         */
-        private const val WAKE_WORD_PPN = "hey-sightline_en_android_v3_0_0.ppn"
+        private const val SAMPLE_RATE = 16000.0f
+
+        private const val GRAMMAR_WAKE =
+            """["hey sight line", "hey sightline", "sight line", "sightline", "[unk]"]"""
 
         fun startCapture(context: Context) =
             try {
@@ -71,8 +78,13 @@ class WakeWordService : Service() {
             }
     }
 
-    private var porcupineManager: PorcupineManager? = null
+    private var model: Model? = null
+    private var modelLoadPending = false
+    private var startRequestedWhileLoading = false
+    private var speechService: SpeechService? = null
+    private var recognizer: Recognizer? = null
     private var capturing = false
+    private var consumed = false
     private var toneGen: ToneGenerator? = null
 
     override fun onCreate() {
@@ -103,8 +115,12 @@ class WakeWordService : Service() {
     override fun onDestroy() {
         Log.i(TAG, "onDestroy")
         stopWakeCapture()
-        porcupineManager?.delete()
-        porcupineManager = null
+        speechService?.shutdown()
+        speechService = null
+        try { recognizer?.close() } catch (_: Exception) {}
+        recognizer = null
+        try { model?.close() } catch (_: Exception) {}
+        model = null
         try { toneGen?.release() } catch (_: Exception) {}
         toneGen = null
         super.onDestroy()
@@ -122,69 +138,126 @@ class WakeWordService : Service() {
             Log.w(TAG, "No RECORD_AUDIO permission yet - capture deferred")
             return
         }
-        val manager = porcupineManager ?: buildPorcupine()
-        if (manager == null) {
-            Log.w(TAG, "Porcupine unavailable - wake word disabled")
+        val m = model
+        if (m == null) {
+            Log.i(TAG, "Vosk model not loaded yet - queuing start")
+            startRequestedWhileLoading = true
+            loadModelIfNeeded()
             return
         }
+        val svc = speechService
+        if (svc != null && capturing) return
         try {
-            manager.start()
+            val rec = Recognizer(m, SAMPLE_RATE, GRAMMAR_WAKE)
+            recognizer = rec
+            val ss = SpeechService(rec, SAMPLE_RATE)
+            speechService = ss
+            consumed = false
+            ss.startListening(listener)
             capturing = true
-            Log.i(TAG, "Wake word capture STARTED")
+            Log.i(TAG, "Wake word capture STARTED (grammar mode)")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start wake word capture", e)
+            stopWakeCapture()
         }
     }
 
     private fun stopWakeCapture() {
-        if (!capturing) return
+        capturing = false
+        startRequestedWhileLoading = false
+        if (speechService == null) return
         try {
-            porcupineManager?.stop()
+            speechService?.stop()
         } catch (e: Exception) {
             Log.w(TAG, "Stop capture error", e)
         }
-        capturing = false
+        try {
+            speechService?.shutdown()
+        } catch (e: Exception) {
+            Log.w(TAG, "Shutdown capture error", e)
+        }
+        speechService = null
+        try { recognizer?.close() } catch (_: Exception) {}
+        recognizer = null
         Log.i(TAG, "Wake word capture STOPPED")
     }
 
-    private fun buildPorcupine(): PorcupineManager? {
-        if (ACCESS_KEY.isBlank()) {
-            Log.e(TAG, "PICOVOICE ACCESS KEY MISSING - set ACCESS_KEY in WakeWordService.kt " +
-                "(free at console.picovoice.ai). Wake word disabled.")
-            return null
-        }
-        return try {
-            val builder = PorcupineManager.Builder().setAccessKey(ACCESS_KEY)
-            if (hasAsset(WAKE_WORD_PPN)) {
-                builder.setKeywordPaths(arrayOf(WAKE_WORD_PPN))
-                Log.i(TAG, "Using custom wake word: $WAKE_WORD_PPN")
-            } else {
-                builder.setKeywords(arrayOf(Porcupine.BuiltInKeyword.PICOVOICE))
-                Log.w(TAG, "Custom wake word '$WAKE_WORD_PPN' not in assets - " +
-                    "falling back to built-in wake word 'Picovoice'")
+    private fun loadModelIfNeeded() {
+        if (model != null || modelLoadPending) return
+        modelLoadPending = true
+        Log.i(TAG, "Unpacking Vosk model from assets...")
+        StorageService.unpack(
+            this, MODEL_ASSET, MODEL_TARGET,
+            { m ->
+                modelLoadPending = false
+                model = m
+                Log.i(TAG, "Vosk model loaded OK")
+                if (startRequestedWhileLoading) {
+                    startRequestedWhileLoading = false
+                    startWakeCapture()
+                }
+            },
+            { e ->
+                modelLoadPending = false
+                Log.e(TAG, "Vosk model load FAILED: ${e.message}", e)
             }
-            builder.build(this) { keywordIndex ->
-                Log.i(TAG, "WAKE WORD DETECTED (index=$keywordIndex)")
-                onWakeWord()
-            }.also { Log.i(TAG, "PorcupineManager built OK") }
-        } catch (e: Exception) {
-            Log.e(TAG, "Porcupine init failed", e)
-            null
+        )
+    }
+
+    private val listener = object : RecognitionListener {
+        override fun onPartialResult(hypothesis: String) {
+            handleResult(hypothesis, isFinal = false)
+        }
+
+        override fun onResult(hypothesis: String) {
+            handleResult(hypothesis, isFinal = true)
+        }
+
+        override fun onFinalResult(hypothesis: String) {
+            handleResult(hypothesis, isFinal = true)
+        }
+
+        override fun onTimeout() {
+            // No timeout mode used; nothing to do.
+        }
+
+        override fun onError(e: Exception) {
+            Log.w(TAG, "Recognition error: ${e.message}")
         }
     }
 
-    private fun hasAsset(name: String): Boolean {
-        return try {
-            assets.open(name).close()
-            true
-        } catch (e: IOException) {
-            false
+    private fun handleResult(json: String, isFinal: Boolean) {
+        if (!capturing || consumed) return
+        val text = try {
+            JSONObject(json).optString(if (isFinal) "text" else "partial", "")
+        } catch (e: Exception) {
+            ""
         }
+        if (text.isEmpty()) return
+        Log.i(TAG, "Vosk${if (isFinal) " final" else " partial"}: $text")
+        if (isWakePhrase(text)) onWakeWord()
+    }
+
+    /**
+     * Grammar mode guarantees results only ever contain wake-phrase tokens or
+     * [unk], so a match here means the user actually said (part of) the wake
+     * phrase - no open dictation is recognised.
+     */
+    private fun isWakePhrase(raw: String): Boolean {
+        val t = raw.lowercase()
+            .replace("[unk]", "")
+            .trim()
+            .split(Regex("\\s+"))
+            .joinToString(" ")
+        return t.contains("sightline") || t.contains("sight line")
     }
 
     // --- Wake behaviour: buzz, beep, open the app ---
 
     private fun onWakeWord() {
+        if (consumed) return
+        consumed = true
+        Log.i(TAG, "WAKE WORD DETECTED")
         buzz()
         beep()
         stopWakeCapture()
