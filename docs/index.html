@@ -3,404 +3,488 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIGHTLINE — AI for a More Independent Tomorrow</title>
+<title>SIGHTLINE — AI FOR A MORE INDEPENDENT TOMORROW</title>
 <meta name="description" content="SIGHTLINE — a phone-first AI assistant that turns visual scenes into short, actionable spoken guidance for people with visual impairment. Built for the iQOO Hackathon 2026.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23DFAF41'/><path d='M24 60 Q50 34 76 60' stroke='%2312161F' stroke-width='7' fill='none' stroke-linecap='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23A90E02'/><path d='M24 62 Q50 34 76 62' stroke='%23FFFBD4' stroke-width='9' fill='none' stroke-linecap='round'/></svg>">
 <style>
+/* ============================================================
+   SIGHTLINE — LEMON CHIFFON + MILANO RED
+   Editorial × Technical × Premium. Same design language as the
+   Technical Club Ecosystem: warm cream canvas, deep red accent,
+   serif display, monospace labels, clean panels, soft shadows.
+   ============================================================ */
+
 :root {
-  --paper: #F2EFEA;
-  --paper-2: #F0EDE8;
-  --paper-3: #E9E5DD;
-  --ink: #12161F;
-  --ink-2: #2A303C;
-  --ink-3: #5A6170;
-  --gold: #DFAF41;
-  --gold-soft: #EBC97E;
-  --gold-pale: #F6E7C1;
-  --line: rgba(18, 22, 31, 0.14);
-  --white: #FFFFFF;
-  --font-head: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-serif: 'Fraunces', serif;
+  --bg: #FFFBD4;
+  --paper: #FFFBD4;
+  --paper-2: #F5F0C8;
+  --surface: #F5F0C8;
+  --surface-2: #EDE8BC;
+  --fg: #2B1A1A;
+  --ink: var(--fg);
+  --ink-soft: rgba(43, 26, 26, 0.65);
+  --ink-muted: rgba(43, 26, 26, 0.35);
+  --muted: rgba(43, 26, 26, 0.5);
+  --line: rgba(43, 26, 26, 0.15);
+  --line-hover: rgba(43, 26, 26, 0.3);
+  --accent: #A90E02;
+  --accent-hover: #8B0B01;
+  --accent-ink: #FFFBD4;
+  --accent-2: rgba(169, 14, 2, 0.8);
+  --danger: #A90E02;
+  --success: #2d8a4e;
+  --shadow-sm: 0 2px 8px rgba(43, 26, 26, 0.12);
+  --shadow-md: 0 4px 14px rgba(43, 26, 26, 0.15);
+  --shadow-lg: 0 8px 30px rgba(43, 26, 26, 0.2);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --selection: #A90E02;
+  --selection-ink: #FFFBD4;
+  --font-display: "DM Serif Display", Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Courier Prime", "JetBrains Mono", monospace;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; border-color: var(--line); }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-body);
-  line-height: 1.6;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-transform: uppercase;
+  line-height: 1.5;
+  overflow-x: hidden;
+  transition: background 150ms ease, color 150ms ease;
 }
-.container { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
-img { max-width: 100%; display: block; }
+::selection { background: var(--selection); color: var(--selection-ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
 
-/* ---------- Marquee strip (deck header) ---------- */
-.marquee {
-  background: var(--ink);
-  color: var(--paper);
-  padding: 10px 0;
+/* ---------- Scroll progress bar ---------- */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: var(--accent); z-index: 200; border-radius: 0 3px 3px 0;
+}
+
+/* ---------- Mouse spotlight ---------- */
+.mouse-spotlight {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(560px circle at var(--mx, 50%) var(--my, 0%), rgba(169, 14, 2, 0.05), transparent 70%);
+}
+
+/* ---------- Display heading — light weight, massive ---------- */
+.display-heading, .tc-display, h1, h2, h3, .tc-display-serif {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 0.88;
+}
+
+/* ---------- Mono label ---------- */
+.tc-mono, .label, .tc-section-index {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+}
+
+/* ---------- Section ---------- */
+.section { padding: 84px 0; }
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- Noise texture overlay ---------- */
+.tc-noise { pointer-events: none; position: absolute; inset: 0; z-index: 0; opacity: 1; }
+.tc-noise::before {
+  content: ""; position: absolute; inset: 0; opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Card / panel — no thick borders, clean ---------- */
+.tc-panel { background: transparent; transition: opacity 200ms ease; }
+.tc-panel:hover { opacity: 0.85; }
+.tc-line { border: 1px solid var(--line); }
+.tc-line-top { border-top: 1px solid var(--line); }
+.tc-card { background: transparent; padding: 24px; }
+
+/* ---------- Buttons ---------- */
+.tc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+  border: none; padding: 20px 30px;
+  font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem;
+  text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none;
+  color: var(--accent-ink); background: var(--accent);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
+  cursor: pointer; transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+.tc-btn:hover { background: var(--accent-hover); box-shadow: var(--shadow-lg); }
+.tc-btn:active { transform: translateY(1px); box-shadow: var(--shadow-sm); }
+.tc-btn-secondary {
+  color: var(--fg); background: transparent; border: 1px solid var(--line); box-shadow: none;
+}
+.tc-btn-secondary:hover { border-color: var(--fg); background: rgba(43, 26, 26, 0.05); }
+.tc-btn-sm { padding: 14px 22px; font-size: 0.78rem; }
+
+/* ---------- Badge ---------- */
+.tc-badge {
+  display: inline-flex; align-items: center; gap: 0.25em;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 5px 14px; font-family: var(--font-mono); font-weight: 400;
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg); background: transparent;
+}
+.tc-badge-accent { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+
+/* ---------- Feature panel ---------- */
+.tc-feature-panel {
+  position: relative;
+  background: rgba(255, 251, 212, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(43, 26, 26, 0.08);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  white-space: nowrap;
-  border-bottom: 3px solid var(--gold);
+}
+
+/* ---------- List item (editorial divide) ---------- */
+.tc-list-item { border-top: 1px solid var(--line); padding: 26px 4px; }
+.tc-list-item:first-child { border-top: none; }
+
+/* ---------- Scroll reveal ---------- */
+.tc-reveal {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tc-reveal.tc-reveal-visible { opacity: 1; transform: none; }
+
+/* ============================================================
+   MARQUEE
+   ============================================================ */
+.marquee {
+  background: var(--accent); color: var(--accent-ink);
+  padding: 12px 0; overflow: hidden; white-space: nowrap; position: relative; z-index: 50;
 }
 .marquee-track {
-  display: inline-block;
-  animation: marquee 42s linear infinite;
-  font-family: var(--font-head);
-  font-size: 0.72rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
+  display: inline-block; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  animation: marquee 36s linear infinite; will-change: transform;
 }
-.marquee-track span { margin: 0 28px; }
-.marquee-track .g { color: var(--gold); }
+.marquee-track span { margin: 0 26px; opacity: 0.9; }
+.marquee-track .sep { opacity: 0.45; }
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-/* ---------- Nav ---------- */
-.nav { position: sticky; top: 0; z-index: 100; background: rgba(242, 239, 234, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 66px; }
-.logo { display: flex; align-items: center; gap: 12px; font-family: var(--font-head); font-weight: 700; font-size: 1.18rem; letter-spacing: 0.14em; }
-.logo-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--gold); display: grid; place-items: center; }
-.logo-mark svg { width: 20px; height: 20px; }
-.logo small { display: block; font-size: 0.55rem; letter-spacing: 0.3em; color: var(--ink-3); font-weight: 500; }
-.nav-links { display: flex; gap: 30px; align-items: center; }
-.nav-links a { font-size: 0.85rem; font-weight: 500; color: var(--ink-2); border-bottom: 2px solid transparent; padding: 4px 0; transition: border-color .2s, color .2s; }
-.nav-links a:hover { color: var(--ink); border-bottom-color: var(--gold); }
-.nav-cta {
-  background: var(--ink); color: var(--paper) !important;
-  padding: 10px 20px; border-radius: 8px; font-weight: 600;
-  font-size: 0.85rem; border: none !important;
-  transition: background .2s, transform .15s;
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255, 251, 212, 0.88);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
 }
-.nav-cta:hover { background: var(--ink-2); transform: translateY(-1px); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.logo { display: flex; align-items: baseline; gap: 10px; }
+.logo .logo-text {
+  font-family: var(--font-display); font-size: 1.35rem; letter-spacing: 0.04em; line-height: 1;
+}
+.logo .logo-text .accent { color: var(--accent); }
+.logo .logo-sub { font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.24em; color: var(--ink-soft); }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a:not(.tc-btn) {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em;
+  color: var(--ink-soft); padding: 4px 0; border-bottom: 2px solid transparent;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.nav-links a:not(.tc-btn):hover { color: var(--fg); border-bottom-color: var(--accent); }
 
-/* ---------- Hero ---------- */
+/* ============================================================
+   HERO — centered editorial
+   ============================================================ */
 .hero {
-  position: relative;
-  padding: 96px 0 88px;
-  overflow: hidden;
+  position: relative; min-height: 100svh;
+  display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden; padding: 84px 0 60px;
 }
-.hero::before {
-  content: "";
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(circle 500px at 82% 12%, rgba(223, 175, 65, 0.10), transparent 70%),
-    radial-gradient(circle 420px at 8% 88%, rgba(18, 22, 31, 0.05), transparent 70%);
-  pointer-events: none;
+.hero .wrap { position: relative; z-index: 2; text-align: center; }
+.hero .kicker {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.24em;
+  color: var(--accent); margin-bottom: 28px;
 }
-.hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 64px; align-items: center; position: relative; }
-.kicker {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-family: var(--font-head); font-size: 0.72rem;
-  letter-spacing: 0.3em; text-transform: uppercase;
-  color: var(--ink-3); margin-bottom: 20px;
-  font-weight: 600;
-}
-.kicker::before { content: ""; width: 34px; height: 2px; background: var(--gold); }
 .hero h1 {
-  font-family: var(--font-head);
-  font-size: clamp(3.2rem, 8vw, 5.6rem);
-  font-weight: 700;
+  font-size: clamp(3.2rem, 13vw, 10rem);
+  color: var(--accent);
   letter-spacing: 0.02em;
-  line-height: 0.98;
-  margin-bottom: 8px;
 }
-.hero h1 .gold { color: var(--gold); }
-.hero .sub {
-  font-family: var(--font-head);
-  font-size: clamp(1rem, 2.4vw, 1.25rem);
-  color: var(--ink-2); font-weight: 500;
-  letter-spacing: 0.02em;
-  margin-bottom: 22px;
+.hero .taglines { margin-top: 34px; }
+.hero .taglines span {
+  display: block; font-size: clamp(1.15rem, 3.5vw, 2.4rem);
+  color: var(--fg); opacity: 0.82;
 }
-.hero .desc { max-width: 560px; color: var(--ink-3); font-size: 1.02rem; margin-bottom: 34px; }
-.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
-.btn {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 15px 28px; border-radius: 10px;
-  font-family: var(--font-head); font-size: 0.95rem; font-weight: 600;
-  letter-spacing: 0.02em; cursor: pointer; border: 1.5px solid transparent;
-  transition: transform .15s, box-shadow .15s, background .2s;
+.hero .taglines span em { font-style: normal; color: var(--accent); }
+.hero-stats {
+  display: flex; justify-content: center; gap: clamp(32px, 9vw, 84px);
+  margin-top: 52px; flex-wrap: wrap;
 }
-.btn:hover { transform: translateY(-2px); }
-.btn-gold { background: var(--gold); color: var(--ink); box-shadow: 0 10px 26px rgba(223, 175, 65, 0.35); }
-.btn-gold:hover { background: var(--gold-soft); }
-.btn-ink { background: transparent; color: var(--ink); border-color: var(--ink); }
-.btn-ink:hover { background: var(--ink); color: var(--paper); }
+.hero-stat { text-align: center; }
+.hero-stat .num { font-size: clamp(1.6rem, 4vw, 2.6rem); line-height: 1; }
+.hero-stat .num.small { font-size: clamp(1.2rem, 3vw, 1.9rem); }
+.hero-stat .lab { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; color: var(--ink-soft); margin-top: 8px; }
+.hero-actions { display: flex; gap: 16px; justify-content: center; margin-top: 56px; flex-wrap: wrap; }
 .hero-foot {
-  display: flex; gap: 40px; margin-top: 54px; flex-wrap: wrap;
-  border-top: 1px solid var(--line); padding-top: 26px;
+  display: flex; justify-content: center; gap: 34px; flex-wrap: wrap;
+  border-top: 1px solid var(--line); margin-top: 54px; padding-top: 26px;
 }
-.hero-foot .pill { display: flex; align-items: center; gap: 12px; }
-.hero-foot .pill .ico { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--gold); display: grid; place-items: center; font-size: 0.9rem; }
-.hero-foot .pill b { display: block; font-family: var(--font-head); font-size: 0.82rem; letter-spacing: 0.06em; }
-.hero-foot .pill small { color: var(--ink-3); font-size: 0.72rem; }
+.hero-foot .pill { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.16em; color: var(--ink-soft); display: flex; align-items: center; gap: 10px; }
+.hero-foot .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 
-/* ---------- Phone mockup (deck style) ---------- */
-.phone-wrap { display: flex; justify-content: center; }
-.phone {
-  width: 300px; background: var(--ink); border-radius: 38px;
-  padding: 14px; box-shadow: 0 30px 70px rgba(18, 22, 31, 0.35), 0 0 0 1px rgba(18,22,31,0.15);
-  position: relative;
-}
-.phone .screen {
-  background: #0C1018; border-radius: 28px; overflow: hidden;
-  min-height: 540px; display: flex; flex-direction: column;
-  color: var(--paper);
-}
-.statusbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px 0; font-size: 0.72rem; font-family: var(--font-head); position: relative; }
-.statusbar .notch { width: 76px; height: 20px; background: #0C1018; border-radius: 12px; position: absolute; left: 50%; transform: translateX(-50%); top: 14px; border: 1px solid #1A1F2B; }
-.phone-screen-head { text-align: center; padding: 20px 0 4px; }
-.phone-screen-head .app { font-family: var(--font-head); font-weight: 700; letter-spacing: 0.22em; font-size: 0.95rem; color: var(--gold); }
-.phone-screen-head .mod { font-size: 0.6rem; letter-spacing: 0.3em; color: var(--paper-3); text-transform: uppercase; margin-top: 4px; opacity: .7; }
-.viewfinder {
-  margin: 18px 16px 14px; border-radius: 14px; height: 185px;
-  background:
-    radial-gradient(circle at 50% 55%, rgba(223,175,65,0.12), transparent 60%),
-    linear-gradient(160deg, #141A26 0%, #0C1018 60%, #10151F 100%);
-  border: 1px solid rgba(223,175,65,0.25);
-  position: relative; overflow: hidden;
-}
-.viewfinder::after {
-  content: ""; position: absolute; left: 8%; right: 8%; top: 50%; transform: translateY(-50%);
-  height: 1px; background: rgba(223,175,65,0.45);
-}
-.viewfinder .obj {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 76px; height: 112px; border: 1.6px solid var(--gold);
-  border-radius: 8px;
-  display: grid; place-items: end center; padding-bottom: 6px;
-  font-family: var(--font-head); font-size: 0.6rem; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase;
-}
-.tel-grid { padding: 0 18px 14px; display: grid; gap: 8px; }
-.tel-row {
-  display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid rgba(242,239,234,0.08); padding-bottom: 8px;
-}
-.tel-row:last-child { border: none; }
-.tel-row .k { font-size: 0.58rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--paper-3); opacity: .65; }
-.tel-row .v { font-family: var(--font-head); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.04em; }
-.tel-row .v.gold { color: var(--gold); }
-.tel-cta { margin: 2px 18px 0; background: var(--gold); color: var(--ink); border-radius: 12px; text-align: center; padding: 13px; font-family: var(--font-head); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.04em; }
-.phone-nav { display: flex; justify-content: space-around; padding: 16px 14px; border-top: 1px solid rgba(242,239,234,0.08); }
-.phone-nav div { text-align: center; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-3); opacity: .8; }
-.phone-nav div b { display: block; font-size: 1rem; margin-bottom: 3px; color: var(--gold); }
-
-/* ---------- Pillars band ---------- */
-.pillars { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper-2); }
-.pillars-inner { display: grid; grid-template-columns: repeat(3, 1fr); }
-.pillar { padding: 26px 30px; border-right: 1px solid var(--line); }
-.pillar:last-child { border-right: none; }
-.pillar .n { font-family: var(--font-head); font-size: 0.72rem; letter-spacing: 0.3em; color: var(--gold); font-weight: 700; }
-.pillar h3 { font-family: var(--font-head); font-size: 1.05rem; margin: 8px 0 6px; letter-spacing: 0.04em; }
-.pillar p { font-size: 0.85rem; color: var(--ink-3); }
-
-/* ---------- Sections ---------- */
-section { padding: 96px 0; }
-.sec-head { max-width: 720px; margin-bottom: 60px; }
+/* ============================================================
+   SECTION HEAD
+   ============================================================ */
+.sec-head { max-width: 760px; margin-bottom: 56px; }
 .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
-.sec-head .kicker { margin-bottom: 16px; }
-.sec-head.center .kicker::before { display: none; }
-.sec-title { font-family: var(--font-head); font-size: clamp(1.9rem, 4.6vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: 0.01em; }
-.sec-title .gold { color: var(--gold); }
-.sec-head p { color: var(--ink-3); margin-top: 16px; font-size: 1rem; }
-
-/* ---------- Problem (dark band) ---------- */
-.problem { background: var(--ink); color: var(--paper); position: relative; overflow: hidden; }
-.problem::before {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(circle 600px at 88% 30%, rgba(223,175,65,0.10), transparent 70%);
-  pointer-events: none;
+.sec-index {
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.24em;
+  color: var(--accent); display: block; margin-bottom: 20px;
 }
-.problem .sec-head .kicker { color: var(--gold); }
-.problem .sec-title { color: var(--paper); }
-.problem .sec-head p { color: rgba(242,239,234,0.65); }
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-.cmp-card { background: rgba(242,239,234,0.05); border: 1px solid rgba(242,239,234,0.12); border-radius: 16px; padding: 30px; }
-.cmp-card .label { font-family: var(--font-head); font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase; margin-bottom: 16px; }
-.cmp-card.no .label { color: rgba(242,239,234,0.5); }
-.cmp-card.yes .label { color: var(--gold); }
-.cmp-card.no .quote { color: rgba(242,239,234,0.55); text-decoration: line-through; text-decoration-color: rgba(223,175,65,0.5); }
-.cmp-card.yes { border-color: rgba(223,175,65,0.5); background: rgba(223,175,65,0.07); }
-.cmp-card .quote { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.5; }
-.cmp-card.yes .quote { color: var(--gold-soft); }
-.cmp-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
-.cmp-tags span { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 12px; border-radius: 100px; border: 1px solid currentColor; }
-.cmp-card.no .cmp-tags span { color: rgba(242,239,234,0.4); }
-.cmp-card.yes .cmp-tags span { color: var(--gold); }
+.sec-title { font-size: clamp(2rem, 5vw, 3.4rem); }
+.sec-title .accent { color: var(--accent); }
+.sec-head > p { color: var(--ink-soft); margin-top: 20px; font-size: 0.95rem; letter-spacing: 0.02em; line-height: 1.6; }
 
-/* ---------- Insight ---------- */
-.insight-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 60px; align-items: center; }
-.insight-quote { font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.4; }
-.insight-quote em { color: var(--gold); font-style: normal; border-bottom: 2px solid var(--gold); }
-.insight-boxes { display: grid; gap: 18px; }
-.insight-box {
-  border: 1px solid var(--line); border-radius: 16px; padding: 26px;
-  display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;
-  background: var(--paper-2);
+/* ============================================================
+   PRODUCT + PHONE PANEL
+   ============================================================ */
+.prod-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 56px; align-items: center; }
+.prod-copy .display-heading { font-size: clamp(1.6rem, 3.4vw, 2.4rem); }
+.prod-copy > p { color: var(--ink-soft); font-size: 0.95rem; margin-top: 20px; letter-spacing: 0.02em; line-height: 1.6; }
+.prod-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+.phone {
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--paper-2); padding: 22px;
+  box-shadow: var(--shadow-lg); max-width: 320px; margin: 0 auto;
 }
-.insight-box .tag { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-weight: 700; padding-top: 4px; }
-.insight-box h4 { font-family: var(--font-head); font-size: 1.02rem; margin-bottom: 6px; }
-.insight-box p { font-size: 0.88rem; color: var(--ink-3); }
-.insight-box.same { border-left: 4px solid var(--ink-3); }
-.insight-box.diff { border-left: 4px solid var(--gold); }
-
-/* ---------- Product flow ---------- */
-.flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-.flow-step { border: 1px solid var(--line); border-radius: 18px; padding: 34px 30px; background: var(--paper-2); position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s; }
-.flow-step:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(18,22,31,0.09); }
-.flow-step .big { font-family: var(--font-head); font-size: 4.4rem; font-weight: 700; color: transparent; -webkit-text-stroke: 1.5px var(--gold); position: absolute; top: 8px; right: 18px; line-height: 1; opacity: .9; }
-.flow-step .ic { width: 46px; height: 46px; border-radius: 12px; background: var(--gold); display: grid; place-items: center; font-size: 1.25rem; margin-bottom: 22px; }
-.flow-step h3 { font-family: var(--font-head); font-size: 1.22rem; margin-bottom: 8px; letter-spacing: 0.02em; }
-.flow-step .q { font-family: var(--font-serif); font-style: italic; color: var(--ink-2); font-size: 0.98rem; margin-bottom: 12px; display: block; }
-.flow-step p { font-size: 0.88rem; color: var(--ink-3); }
-
-/* ---------- Modes ---------- */
-.modes { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.modes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.mode-card {
-  border: 1px solid var(--line); border-radius: 16px; padding: 26px;
-  background: var(--paper); transition: transform .2s, box-shadow .2s, border-color .2s;
+.phone .screen { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--paper); }
+.phone-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
+.phone-head .app { font-family: var(--font-display); font-size: 1rem; color: var(--accent); }
+.phone-head .mod { font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.2em; color: var(--ink-soft); }
+.phone-status { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); align-items: center; }
+.phone-status .live { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: blink 1.6s ease-in-out infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.phone-status .txt { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.18em; color: var(--ink-soft); }
+.phone-readout { padding: 6px 0 2px; }
+.phone-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.phone-row:last-child { border-bottom: none; }
+.phone-row .k { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.2em; color: var(--ink-muted); }
+.phone-row .v { font-family: var(--font-display); font-size: 1rem; }
+.phone-row .v.accent { color: var(--accent); }
+.phone-row .v.ok { color: var(--success); }
+.phone-cta {
+  margin: 4px 16px 16px; background: var(--accent); color: var(--accent-ink);
+  border-radius: var(--radius-sm); text-align: center; padding: 13px 12px;
+  font-family: var(--font-mono); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.08em;
+  box-shadow: var(--shadow-sm);
 }
-.mode-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(18,22,31,0.08); border-color: rgba(223,175,65,0.55); }
-.mode-card .m-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-.mode-card .m-num { font-family: var(--font-head); font-size: 0.66rem; letter-spacing: 0.2em; color: var(--gold); font-weight: 700; }
-.mode-card .m-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--paper-3); display: grid; place-items: center; font-size: 1.1rem; margin-left: auto; }
-.mode-card h3 { font-family: var(--font-head); font-size: 1.05rem; letter-spacing: 0.03em; }
-.mode-card p { font-size: 0.85rem; color: var(--ink-3); }
-.mode-card .trigger { display: inline-block; margin-top: 14px; font-size: 0.7rem; color: var(--ink-2); background: var(--gold-pale); padding: 4px 12px; border-radius: 100px; font-family: var(--font-head); letter-spacing: 0.03em; }
-
-/* ---------- Use cases ---------- */
-.uc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-.uc-card { border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: var(--paper-2); }
-.uc-vis { padding: 34px 30px 26px; border-bottom: 1px solid var(--line); position: relative; }
-.uc-vis .uc-num { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.28em; color: var(--gold); font-weight: 700; }
-.uc-vis .uc-obj { display: block; font-family: var(--font-head); font-size: 2rem; font-weight: 700; margin-top: 10px; }
-.uc-vis .uc-dist { font-family: var(--font-serif); font-style: italic; color: var(--ink-3); font-size: 0.95rem; display: block; margin-top: 4px; }
-.uc-arrow { font-size: 1.4rem; color: var(--gold); margin-top: 14px; }
-.uc-body { padding: 24px 30px 28px; }
-.uc-body .ask { font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; margin-bottom: 10px; display: block; }
-.uc-body .resp { display: block; font-family: var(--font-head); font-size: 0.86rem; line-height: 1.7; color: var(--ink-2); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
-.uc-body .resp b { color: var(--gold); }
-
-/* ---------- How it works ---------- */
-.hiw { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 64px; align-items: center; }
-.hiw-side .h-slug { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 14px; }
-.hiw-side .h-badge { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
-.hiw-side .h-badge span { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; border: 1.5px solid var(--gold); color: var(--ink); padding: 8px 16px; border-radius: 100px; font-weight: 600; }
-.hiw-steps { display: grid; gap: 0; }
-.hiw-step { display: grid; grid-template-columns: 54px 1fr; gap: 20px; padding-bottom: 30px; position: relative; }
-.hiw-step::before { content: ""; position: absolute; left: 26.5px; top: 54px; bottom: 0; width: 1px; background: var(--line); }
-.hiw-step:last-child::before { display: none; }
-.hiw-step .d { width: 54px; height: 54px; border-radius: 50%; border: 1.5px solid var(--gold); display: grid; place-items: center; font-family: var(--font-head); font-weight: 700; color: var(--ink); background: var(--paper); z-index: 1; }
-.hiw-step:nth-child(even) .d { background: var(--gold); color: var(--paper); }
-.hiw-step h4 { font-family: var(--font-head); font-size: 1.02rem; margin: 4px 0 6px; }
-.hiw-step p { font-size: 0.88rem; color: var(--ink-3); }
-.hiw-step .io { font-size: 0.7rem; font-family: var(--font-head); color: var(--gold); letter-spacing: 0.08em; display: block; margin-top: 8px; }
-
-/* ---------- Tech ---------- */
-.tech { border-top: 1px solid var(--line); background: var(--paper); }
-.tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-.tech-card { border: 1px solid var(--line); border-radius: 16px; padding: 26px 22px; text-align: center; background: var(--paper-2); }
-.tech-card .t-ic { font-size: 1.6rem; margin-bottom: 14px; }
-.tech-card h4 { font-family: var(--font-head); font-size: 0.92rem; margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; }
-.tech-card p { font-size: 0.78rem; color: var(--ink-3); }
-.tech-card .eg { display: block; margin-top: 10px; font-size: 0.66rem; color: var(--gold); font-family: var(--font-head); letter-spacing: 0.06em; }
-.tech-strip {
-  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 48px;
-  border-top: 1px solid var(--line); padding-top: 36px;
+.phone-float {
+  position: absolute; left: 50%; bottom: -76px; transform: translateX(-50%);
+  background: var(--accent); color: var(--accent-ink);
+  border-radius: var(--radius-md); padding: 14px 20px;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
+  box-shadow: var(--shadow-lg); white-space: nowrap;
 }
-.tech-strip span { font-family: var(--font-head); font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink); font-weight: 600; padding: 9px 20px; border: 1.5px solid var(--ink); border-radius: 100px; }
 
-/* ---------- Download CTA ---------- */
-.download { background: var(--ink); color: var(--paper); text-align: center; position: relative; overflow: hidden; }
-.download::before {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(circle 520px at 50% -10%, rgba(223,175,65,0.16), transparent 70%);
-  pointer-events: none;
+/* ============================================================
+   PROBLEM — compare cards
+   ============================================================ */
+.bands { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cmp-card {
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 30px; background: var(--bg); transition: opacity 200ms ease;
 }
-.download h2 { font-family: var(--font-head); font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.08; margin-bottom: 18px; }
-.download h2 .gold { color: var(--gold); }
-.download > .container > p { color: rgba(242,239,234,0.65); max-width: 540px; margin: 0 auto 36px; }
-.btn-gold-lg { background: var(--gold); color: var(--ink); padding: 18px 44px; font-size: 1.05rem; box-shadow: 0 14px 40px rgba(223,175,65,0.4); }
-.dl-steps { display: flex; gap: 44px; justify-content: center; flex-wrap: wrap; margin-top: 54px; text-align: left; }
-.dl-step { max-width: 240px; }
-.dl-step .n { color: var(--gold); font-family: var(--font-head); font-weight: 700; font-size: 1.2rem; }
-.dl-step p { margin-top: 6px; font-size: 0.85rem; color: rgba(242,239,234,0.65); }
+.cmp-card:hover { opacity: 0.9; }
+.cmp-card .label { color: var(--ink-soft); margin-bottom: 18px; }
+.cmp-card.no .label { color: var(--ink-muted); }
+.cmp-card.no .quote { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: rgba(169, 14, 2, 0.55); text-decoration-thickness: 2px; }
+.cmp-card .quote { font-size: clamp(1.1rem, 2.4vw, 1.35rem); line-height: 1.35; }
+.cmp-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+.cmp-card.no .cmp-tags span { color: var(--ink-muted); }
+.cmp-card.yes .cmp-tags span { color: var(--accent); }
 
-/* ---------- Team ---------- */
-.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-.team-card { border: 1px solid var(--line); border-radius: 18px; padding: 34px; background: var(--paper-2); display: flex; gap: 26px; align-items: center; }
+/* ============================================================
+   PILLARS
+   ============================================================ */
+.pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pillar { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 34px 30px; background: var(--bg); }
+.pillar .n { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.22em; color: var(--accent); }
+.pillar h3 { font-size: clamp(1.5rem, 3vw, 2.1rem); margin: 16px 0 12px; }
+.pillar p { color: var(--ink-soft); font-size: 0.85rem; letter-spacing: 0.02em; line-height: 1.6; }
+
+/* ============================================================
+   INSIGHT
+   ============================================================ */
+.insight-quote { font-size: clamp(1.4rem, 3.2vw, 2rem); max-width: 720px; margin-bottom: 48px; }
+.insight-quote em { color: var(--accent); font-style: normal; }
+.insight-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.insight-box { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 28px; background: var(--paper-2); }
+.insight-box .tag { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 14px; display: block; }
+.insight-box.same .tag { color: var(--ink-muted); }
+.insight-box h4 { font-size: 1.2rem; margin-bottom: 10px; }
+.insight-box p { color: var(--ink-soft); font-size: 0.85rem; letter-spacing: 0.02em; line-height: 1.6; }
+
+/* ============================================================
+   MODES GRID
+   ============================================================ */
+.modes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.mode-card { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 26px; background: var(--bg); }
+.mode-card:hover { opacity: 0.85; }
+.mode-card .m-num { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.22em; color: var(--accent); }
+.mode-card h3 { font-size: 1.15rem; margin: 12px 0 10px; }
+.mode-card p { color: var(--ink-soft); font-size: 0.8rem; letter-spacing: 0.02em; line-height: 1.55; }
+.mode-card .trigger { display: inline-block; margin-top: 14px; font-size: 0.66rem; color: var(--fg); border: 1px solid var(--line-hover); padding: 5px 12px; border-radius: var(--radius-sm); font-family: var(--font-mono); letter-spacing: 0.06em; background: var(--paper-2); }
+
+/* ============================================================
+   USE CASES — editorial list
+   ============================================================ */
+.uc-item { display: grid; grid-template-columns: 150px 1fr 1.4fr; gap: 28px; align-items: center; padding: 30px 4px; border-top: 1px solid var(--line); }
+.uc-item:first-child { border-top: none; }
+.uc-item .uc-num { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent); }
+.uc-item .uc-obj { font-size: clamp(1.15rem, 2.6vw, 1.6rem); }
+.uc-item .uc-dist { display: block; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.14em; color: var(--ink-soft); margin-top: 8px; }
+.uc-item .ask { display: block; font-size: 1.05rem; color: var(--ink-soft); }
+.uc-item .resp { display: block; font-size: 1.05rem; margin-top: 8px; }
+.uc-item .resp b { color: var(--accent); font-weight: 400; }
+
+/* ============================================================
+   ENGINE STEPS
+   ============================================================ */
+.engine-steps { border-top: 1px solid var(--line); }
+.step { display: grid; grid-template-columns: 72px 1fr; gap: 24px; padding: 30px 4px; border-bottom: 1px solid var(--line); align-items: baseline; }
+.step .d {
+  width: 54px; height: 54px; border-radius: 50%;
+  border: 1px solid var(--accent); color: var(--accent);
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 0.9rem;
+}
+.step:nth-child(even) .d { background: var(--accent); color: var(--accent-ink); }
+.step h4 { font-size: 1.3rem; margin-bottom: 8px; }
+.step p { color: var(--ink-soft); font-size: 0.85rem; letter-spacing: 0.02em; line-height: 1.6; }
+.step .io { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; color: var(--accent); }
+
+/* ============================================================
+   TECH
+   ============================================================ */
+.tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.tech-card { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 28px 22px; text-align: center; background: var(--paper-2); }
+.tech-card .t-ic { font-family: var(--font-mono); font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
+.tech-card h4 { font-size: 1rem; margin-bottom: 10px; }
+.tech-card p { color: var(--ink-soft); font-size: 0.72rem; letter-spacing: 0.02em; line-height: 1.5; }
+.tech-card .eg { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.12em; color: var(--accent); }
+.tech-strip { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 46px; border-top: 1px solid var(--line); padding-top: 34px; }
+
+/* ============================================================
+   DOWNLOAD
+   ============================================================ */
+.download { text-align: center; }
+.download h2 { font-size: clamp(2rem, 5vw, 3.2rem); margin-bottom: 22px; }
+.download .lbl { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.22em; color: var(--accent); margin-bottom: 24px; display: block; }
+.download > .wrap > p { color: var(--ink-soft); max-width: 560px; margin: 0 auto 40px; font-size: 0.95rem; letter-spacing: 0.02em; line-height: 1.6; }
+.dl-steps { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; margin-top: 52px; }
+.dl-step { max-width: 260px; text-align: left; }
+.dl-step .n { color: var(--accent); font-family: var(--font-mono); font-size: 1rem; font-weight: 700; }
+.dl-step p { margin-top: 8px; color: var(--ink-soft); font-size: 0.8rem; letter-spacing: 0.02em; line-height: 1.6; }
+
+/* ============================================================
+   TEAM
+   ============================================================ */
+.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.team-card { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 34px; background: var(--paper-2); display: flex; gap: 24px; align-items: center; }
 .team-avatar {
-  width: 88px; height: 88px; border-radius: 50%; background: var(--ink);
-  color: var(--gold); display: grid; place-items: center;
-  font-family: var(--font-head); font-weight: 700; font-size: 1.8rem;
-  flex-shrink: 0; border: 2px solid var(--gold);
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--accent); color: var(--accent);
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 1.3rem; letter-spacing: 0.1em;
 }
-.team-card h3 { font-family: var(--font-head); font-size: 1.2rem; }
-.team-card .role { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; font-family: var(--font-head); font-weight: 600; margin: 4px 0 10px; display: block; }
-.team-card p { font-size: 0.88rem; color: var(--ink-3); }
-.team-motto { font-family: var(--font-serif); font-style: italic; text-align: center; font-size: 1.3rem; margin-top: 48px; color: var(--ink-2); }
-.team-motto em { color: var(--gold); font-style: normal; }
+.team-card h3 { font-size: 1.4rem; }
+.team-card .role { display: block; color: var(--accent); font-size: 0.64rem; letter-spacing: 0.2em; font-family: var(--font-mono); margin: 6px 0 10px; }
+.team-card p { color: var(--ink-soft); font-size: 0.82rem; letter-spacing: 0.02em; line-height: 1.6; }
+.team-motto { font-size: clamp(1.1rem, 2.4vw, 1.5rem); text-align: center; margin-top: 52px; }
+.team-motto em { color: var(--accent); font-style: normal; }
 
-/* ---------- Footer ---------- */
-footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--paper-2); }
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer { border-top: 1px solid var(--line); padding: 46px 0; background: var(--paper-2); }
 .foot-inner { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
-.foot-tag { font-family: var(--font-head); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); }
-.foot-tag .g { color: var(--gold); font-weight: 600; }
-.foot-brand { font-family: var(--font-head); font-weight: 700; letter-spacing: 0.16em; }
-.foot-brand .gold { color: var(--gold); }
+.foot-tag { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.2em; color: var(--ink-soft); }
+.foot-tag .sep { color: var(--accent); }
+.foot-brand { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 0.04em; }
+.foot-brand .accent { color: var(--accent); }
 
-/* ---------- Responsive ---------- */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 960px) {
-  .hero-grid { grid-template-columns: 1fr; gap: 48px; }
-  .phone-wrap { order: -1; }
-  .pillars-inner { grid-template-columns: 1fr; }
-  .pillar { border-right: none; border-bottom: 1px solid var(--line); }
-  .pillar:last-child { border-bottom: none; }
-  .problem .compare, .insight-grid, .hiw { grid-template-columns: 1fr; }
-  .modes-grid, .uc-grid { grid-template-columns: repeat(2, 1fr); }
+  .prod-grid { grid-template-columns: 1fr; gap: 48px; }
+  .compare, .insight-boxes, .team-grid { grid-template-columns: 1fr; }
+  .modes-grid { grid-template-columns: repeat(2, 1fr); }
   .tech-grid { grid-template-columns: repeat(2, 1fr); }
-  .team-grid { grid-template-columns: 1fr; }
-  .flow { grid-template-columns: 1fr; }
+  .pillars { grid-template-columns: 1fr; }
+  .uc-item { grid-template-columns: 1fr; gap: 10px; }
+  .uc-item .uc-num { grid-row: 1; }
 }
 @media (max-width: 640px) {
-  .nav-links a:not(.nav-cta) { display: none; }
-  section { padding: 68px 0; }
-  .modes-grid, .uc-grid, .tech-grid { grid-template-columns: 1fr; }
-  .dl-steps { gap: 28px; }
-  .team-card { flex-direction: column; text-align: center; }
+  .nav-links a:not(.tc-btn) { display: none; }
+  .section { padding: 66px 0; }
+  .modes-grid, .tech-grid { grid-template-columns: 1fr; }
+  .hero { min-height: 92svh; padding-top: 56px; }
+  .team-card { flex-direction: column; text-align: center; gap: 14px; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .tc-reveal { opacity: 1; transform: none; }
 }
 </style>
 </head>
 <body>
 
+<!-- Scroll progress -->
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+<!-- Mouse spotlight -->
+<div class="mouse-spotlight" id="spotlight" aria-hidden="true"></div>
+
 <!-- Marquee strip -->
 <div class="marquee">
   <div class="marquee-track">
-    <span>BUILD</span><span class="g">|</span><span>SHAPE</span><span class="g">|</span><span>GREAT IDEAS</span><span class="g">|</span><span>DON'T NEED DESKS</span><span class="g">|</span><span>iQOO HACKATHON</span><span class="g">|</span><span>AI-POWERED</span><span class="g">|</span><span>2026</span><span class="g">|</span><span>VISION</span><span class="g">|</span><span>INTENT</span><span class="g">|</span><span>SPATIAL AI</span><span class="g">|</span><span>FOR A MORE INCLUSIVE WORLD</span><span class="g">|</span>
-    <span>BUILD</span><span class="g">|</span><span>SHAPE</span><span class="g">|</span><span>GREAT IDEAS</span><span class="g">|</span><span>DON'T NEED DESKS</span><span class="g">|</span><span>iQOO HACKATHON</span><span class="g">|</span><span>AI-POWERED</span><span class="g">|</span><span>2026</span><span class="g">|</span><span>VISION</span><span class="g">|</span><span>INTENT</span><span class="g">|</span><span>SPATIAL AI</span><span class="g">|</span><span>FOR A MORE INCLUSIVE WORLD</span><span class="g">|</span>
+    <span>Build</span><span class="sep">|</span><span>Shape</span><span class="sep">|</span><span>Great Ideas</span><span class="sep">|</span><span>Don't Need Desks</span><span class="sep">|</span><span>iQOO Hackathon</span><span class="sep">|</span><span>AI-Powered</span><span class="sep">|</span><span>2026</span><span class="sep">|</span><span>Vision</span><span class="sep">|</span><span>Intent</span><span class="sep">|</span><span>Spatial AI</span><span class="sep">|</span><span>For a More Inclusive World</span><span class="sep">|</span>
+    <span>Build</span><span class="sep">|</span><span>Shape</span><span class="sep">|</span><span>Great Ideas</span><span class="sep">|</span><span>Don't Need Desks</span><span class="sep">|</span><span>iQOO Hackathon</span><span class="sep">|</span><span>AI-Powered</span><span class="sep">|</span><span>2026</span><span class="sep">|</span><span>Vision</span><span class="sep">|</span><span>Intent</span><span class="sep">|</span><span>Spatial AI</span><span class="sep">|</span><span>For a More Inclusive World</span><span class="sep">|</span>
   </div>
 </div>
 
 <!-- Nav -->
 <nav class="nav">
-  <div class="container nav-inner">
+  <div class="wrap nav-inner">
     <div class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 100 100" fill="none"><path d="M24 60 Q50 34 76 60" stroke="#12161F" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="50" cy="44" r="6" fill="#12161F"/></svg>
-      </div>
-      <div>
-        SIGHTLINE
-        <small>VISION · INTENT · SPATIAL AI</small>
-      </div>
+      <span class="logo-text">SIGHT<span class="accent">LINE</span></span>
+      <span class="logo-sub">Vision · Intent · Spatial AI</span>
     </div>
     <div class="nav-links">
       <a href="#product">Product</a>
@@ -408,226 +492,226 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--p
       <a href="#usecases">Use Cases</a>
       <a href="#tech">Technology</a>
       <a href="#team">Team</a>
-      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="nav-cta">Get the App</a>
+      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="tc-btn tc-btn-sm">Get the App</a>
     </div>
   </div>
 </nav>
 
 <!-- Hero -->
 <header class="hero">
-  <div class="container hero-grid">
-    <div>
-      <span class="kicker">AI for a more independent tomorrow</span>
-      <h1>SIGHT<span class="gold">LINE</span></h1>
-      <p class="sub">A phone-first AI assistant that turns visual scenes into short, actionable spoken guidance.</p>
-      <p class="desc">
-        Built for people with visual impairment. SIGHTLINE understands what you're trying to
-        <em>do</em> — finds what you need, and guides you through the world with clear, real-time
-        voice. 100% on-device. Private. Works offline.
-      </p>
-      <div class="hero-actions">
-        <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-gold">Download the APK</a>
-        <a href="#product" class="btn btn-ink">How it works →</a>
+  <div class="tc-noise"></div>
+  <div class="wrap">
+    <p class="kicker tc-reveal">Reskill × iQOO Hackathon 2026 · Open Innovation</p>
+    <h1 class="tc-reveal" id="heroTitle">SIGHTLINE</h1>
+    <div class="taglines">
+      <span class="tc-reveal">That Understands.</span>
+      <span class="tc-reveal">That Locates.</span>
+      <span class="tc-reveal">That <em>Guides.</em></span>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat tc-reveal">
+        <div class="num" data-count="9" data-suffix="">0</div>
+        <div class="lab">Modes</div>
       </div>
-      <div class="hero-foot">
-        <div class="pill"><span class="ico">🎯</span><span><b>FIND</b><small>Objects in real space</small></span></div>
-        <div class="pill"><span class="ico">🧭</span><span><b>GUIDE</b><small>With spoken voice</small></span></div>
-        <div class="pill"><span class="ico">🗣️</span><span><b>WAKE WORD</b><small>Just say "Hey Sightline"</small></span></div>
+      <div class="hero-stat tc-reveal">
+        <div class="num small" data-count="0.09" data-prefix="" data-suffix=" s" data-decimals="2">0</div>
+        <div class="lab">Response Latency</div>
+      </div>
+      <div class="hero-stat tc-reveal">
+        <div class="num" data-count="100" data-suffix="%">0</div>
+        <div class="lab">On-Device · Private</div>
+      </div>
+      <div class="hero-stat tc-reveal">
+        <div class="num small" data-count="4" data-suffix=" core">0</div>
+        <div class="lab">Smart Modes</div>
       </div>
     </div>
-
-    <!-- Phone mockup -->
-    <div class="phone-wrap">
-      <div class="phone">
-        <div class="screen">
-          <div class="statusbar">
-            <span>9:41</span>
-            <span class="notch"></span>
-            <span>▮▮▮ ▮</span>
-          </div>
-          <div class="phone-screen-head">
-            <div class="app">SIGHTLINE</div>
-            <div class="mod">Spatial AI · Guide</div>
-          </div>
-          <div class="viewfinder">
-            <div class="obj">Chair</div>
-          </div>
-          <div class="tel-grid">
-            <div class="tel-row"><span class="k">Target</span><span class="v gold">Chair</span></div>
-            <div class="tel-row"><span class="k">Distance</span><span class="v">2.1 metres</span></div>
-            <div class="tel-row"><span class="k">Direction</span><span class="v">Slightly left · 15°</span></div>
-            <div class="tel-row"><span class="k">Path</span><span class="v" style="color:#7BC96F">Clear</span></div>
-          </div>
-          <div class="tel-cta">Move forward, then slightly left</div>
-          <div class="phone-nav">
-            <div><b>◎</b>Scan</div>
-            <div><b>◷</b>History</div>
-            <div><b>⌕</b>Ask</div>
-            <div><b>➤</b>Navigate</div>
-          </div>
-        </div>
-      </div>
+    <div class="hero-actions">
+      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="tc-btn">Download the APK</a>
+      <a href="#product" class="tc-btn tc-btn-secondary">How It Works</a>
+    </div>
+    <div class="hero-foot">
+      <span class="pill"><span class="dot"></span>Find Objects In Real Space</span>
+      <span class="pill"><span class="dot"></span>Guide With Spoken Voice</span>
+      <span class="pill"><span class="dot"></span>Wake Word — "Hey Sightline"</span>
     </div>
   </div>
 </header>
 
-<!-- Pillars -->
-<div class="pillars">
-  <div class="container pillars-inner">
-    <div class="pillar">
-      <span class="n">01 · YOUR INTENT</span>
-      <h3>UNDERSTAND</h3>
-      <p>Listen to your voice, understand your intent, and focus on what matters.</p>
+<!-- Product + phone panel -->
+<section class="section" id="product">
+  <div class="wrap prod-grid">
+    <div class="prod-copy">
+      <span class="sec-index tc-reveal">00 / The Product</span>
+      <div class="display-heading tc-reveal">One Phone.<br>Your Vision.<br><span style="color: var(--accent);">Our Guidance.</span></div>
+      <p class="tc-reveal">
+        SIGHTLINE is a phone-first AI assistant that turns visual scenes into short,
+        actionable spoken guidance. It understands what you're trying to do — finds
+        what you need, and guides you through the world with real-time voice.
+        All on-device. Private. Works offline.
+      </p>
+      <div class="prod-badges tc-reveal">
+        <span class="tc-badge">Real-Time Response</span>
+        <span class="tc-badge">On-Device</span>
+        <span class="tc-badge">Offline</span>
+        <span class="tc-badge tc-badge-accent">Just Say It</span>
+      </div>
     </div>
-    <div class="pillar">
-      <span class="n">02 · THE SCENE</span>
-      <h3>LOCATE</h3>
-      <p>Analyze the scene, identify the right object, and determine its real-world position.</p>
-    </div>
-    <div class="pillar">
-      <span class="n">03 · REACH</span>
-      <h3>GUIDE</h3>
-      <p>Give short, clear, spoken directions so you can act with confidence.</p>
+    <div class="phone tc-reveal">
+      <div class="screen">
+        <div class="phone-head">
+          <span class="app">SIGHTLINE</span>
+          <span class="mod">Spatial AI · Guide</span>
+        </div>
+        <div class="phone-status">
+          <span class="live"></span>
+          <span class="txt">Scene alive — interpreting intent</span>
+        </div>
+        <div class="phone-readout">
+          <div class="phone-row"><span class="k">Target</span><span class="v accent">Chair</span></div>
+          <div class="phone-row"><span class="k">Distance</span><span class="v">2.1 Metres</span></div>
+          <div class="phone-row"><span class="k">Direction</span><span class="v">Slightly Left · 15°</span></div>
+          <div class="phone-row"><span class="k">Path</span><span class="v ok">Clear</span></div>
+        </div>
+        <div class="phone-cta">Move Forward, Then Slightly Left</div>
+      </div>
     </div>
   </div>
-</div>
+</section>
 
 <!-- Problem -->
-<section class="problem" id="product">
-  <div class="container">
+<section class="section bands">
+  <div class="wrap">
     <div class="sec-head">
-      <span class="kicker">The Problem</span>
-      <h2 class="sec-title">Seeing isn't the problem.<br>Knowing what to <span class="gold">do</span> is.</h2>
-      <p>Most AI vision assistants describe what's in front of the camera. But visually impaired users don't need a list of objects — they need actionable spatial guidance.</p>
+      <span class="sec-index tc-reveal">01 / The Problem</span>
+      <h2 class="sec-title tc-reveal">Seeing Isn't The Problem.<br>Knowing What To <span class="accent">Do</span> Is.</h2>
+      <p class="tc-reveal">Most AI vision assistants describe what's in front of the camera. But visually impaired users don't need a list of objects — they need actionable spatial guidance.</p>
     </div>
     <div class="compare">
-      <div class="cmp-card no">
-        <div class="label">Most AI assistants answer</div>
+      <div class="cmp-card no tc-reveal">
+        <span class="label">Most AI Assistants Answer</span>
         <div class="quote">"I see a chair, table, bottle, person, plant and a door."</div>
-        <div class="cmp-tags"><span>Object lists</span><span>Not helpful</span><span>Context missing</span></div>
+        <div class="cmp-tags"><span class="tc-badge">Object Lists</span><span class="tc-badge">Not Helpful</span><span class="tc-badge">Context Missing</span></div>
       </div>
-      <div class="cmp-card yes">
-        <div class="label">What users actually need</div>
+      <div class="cmp-card yes tc-reveal">
+        <span class="label">What Users Actually Need</span>
         <div class="quote">"The chair is 2.1 metres ahead. Slightly left. Move forward."</div>
-        <div class="cmp-tags"><span>Actionable</span><span>Spatial context</span><span>Rare in AI</span></div>
+        <div class="cmp-tags"><span class="tc-badge">Actionable</span><span class="tc-badge">Spatial Context</span><span class="tc-badge">Rare In AI</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pillars -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="sec-index tc-reveal">02 / The Pillars</span>
+      <h2 class="sec-title tc-reveal">Three Moves. <span class="accent">One Journey.</span></h2>
+    </div>
+    <div class="pillars">
+      <div class="pillar tc-reveal">
+        <span class="n">01 — Intent</span>
+        <h3>Understand</h3>
+        <p>Listen to your voice, understand your intent, and focus on exactly what matters.</p>
+      </div>
+      <div class="pillar tc-reveal">
+        <span class="n">02 — Scene</span>
+        <h3>Locate</h3>
+        <p>Analyze the scene, identify the right object, and determine its real-world position.</p>
+      </div>
+      <div class="pillar tc-reveal">
+        <span class="n">03 — Reach</span>
+        <h3>Guide</h3>
+        <p>Give short, clear, spoken directions so you can act with confidence.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- Insight -->
-<section>
-  <div class="container insight-grid">
-    <div>
-      <span class="kicker">The Insight</span>
-      <div class="insight-quote">
-        The real value isn't a description of the scene — it's an understanding of your
-        <em>intent</em> and actionable guidance to achieve it.
-      </div>
+<section class="section bands">
+  <div class="wrap">
+    <span class="sec-index tc-reveal">03 / The Insight</span>
+    <div class="insight-quote tc-reveal">
+      The real value isn't a description of the scene — it's an understanding of your
+      <em>intent</em> and actionable guidance to achieve it.
     </div>
     <div class="insight-boxes">
-      <div class="insight-box same">
-        <span class="tag">Same Scene</span>
-        <div>
-          <h4>Object-centric</h4>
-          <p>"What do you see?" — the camera sees the same scene. Traditional AI generates a list of objects.</p>
-        </div>
+      <div class="insight-box same tc-reveal">
+        <span class="tag">Object-Centric</span>
+        <h4>"What Do You See?"</h4>
+        <p>The camera sees the same scene. Traditional AI generates a list of objects.</p>
       </div>
-      <div class="insight-box diff">
-        <span class="tag">Different Question</span>
-        <div>
-          <h4>Intent-centric — SIGHTLINE</h4>
-          <p>"What am I trying to do?" — detect, reason in space, then guide: "The chair is 2.1 metres ahead, slightly left."</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Product flow -->
-<section style="background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
-  <div class="container">
-    <div class="sec-head center">
-      <span class="kicker">The Product</span>
-      <h2 class="sec-title">One phone. Your vision. <span class="gold">Our guidance.</span></h2>
-    </div>
-    <div class="flow">
-      <div class="flow-step">
-        <span class="big">01</span>
-        <div class="ic">👂</div>
-        <h3>UNDERSTAND</h3>
-        <span class="q">What are you trying to do?</span>
-        <p>Listen to your voice, understand your intent, and focus on exactly what matters.</p>
-      </div>
-      <div class="flow-step">
-        <span class="big">02</span>
-        <div class="ic">📍</div>
-        <h3>LOCATE</h3>
-        <span class="q">Where is the target?</span>
-        <p>Analyze the scene, identify the right object, and determine its real-world position and distance.</p>
-      </div>
-      <div class="flow-step">
-        <span class="big">03</span>
-        <div class="ic">🎙️</div>
-        <h3>GUIDE</h3>
-        <span class="q">What should you do next?</span>
-        <p>Give short, clear, spoken directions so you can take action confidently.</p>
+      <div class="insight-box tc-reveal">
+        <span class="tag">Intent-Centric — SIGHTLINE</span>
+        <h4>"What Am I Trying To Do?"</h4>
+        <p>Detect, reason in space, then guide: "The chair is 2.1 metres ahead, slightly left."</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- Modes -->
-<section class="modes" id="modes">
-  <div class="container">
+<section class="section" id="modes">
+  <div class="wrap">
     <div class="sec-head center">
-      <span class="kicker">Capabilities</span>
-      <h2 class="sec-title">Nine ways to <span class="gold">understand</span> your world</h2>
-      <p>Every phrase works hands-free — just say it out loud.</p>
+      <span class="sec-index tc-reveal">04 / The Modes</span>
+      <h2 class="sec-title tc-reveal">Nine Ways To <span class="accent">Understand</span> Your World</h2>
+      <p class="tc-reveal">Every phrase works hands-free — just say it out loud.</p>
     </div>
     <div class="modes-grid">
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">01</span><h3>FIND</h3><span class="m-ic">🎯</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">01</span>
+        <h3>Find</h3>
         <p>Point the camera and ask where something is. Get direction and distance in plain words.</p>
         <span class="trigger">"Find a chair"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">02</span><h3>GUIDE</h3><span class="m-ic">🧭</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">02</span>
+        <h3>Guide</h3>
         <p>Step-by-step spoken navigation toward a target, with obstacle warnings along the way.</p>
         <span class="trigger">"Guide me to the exit"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">03</span><h3>UNDERSTAND</h3><span class="m-ic">👀</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">03</span>
+        <h3>Understand</h3>
         <p>A calm summary of what's around you — objects, positions, anything in your path.</p>
         <span class="trigger">"What's around me?"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">04</span><h3>REMEMBER</h3><span class="m-ic">🧠</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">04</span>
+        <h3>Remember</h3>
         <p>Tell it where you put things. It remembers — and recalls them later.</p>
         <span class="trigger">"Remember where I put my phone"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">05</span><h3>READ</h3><span class="m-ic">📖</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">05</span>
+        <h3>Read</h3>
         <p>Offline OCR reads signs, menus, labels and papers — out loud.</p>
         <span class="trigger">"Read this"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">06</span><h3>MONEY</h3><span class="m-ic">💵</span></div>
-        <p>Recognizes Indian banknotes — ₹10, ₹20, ₹50, ₹100, ₹200, ₹500, ₹2000.</p>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">06</span>
+        <h3>Money</h3>
+        <p>Recognizes Indian banknotes — ₹10 to ₹2000.</p>
         <span class="trigger">"How much is this?"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">07</span><h3>BARCODE</h3><span class="m-ic">🏷️</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">07</span>
+        <h3>Barcode</h3>
         <p>Scans QR codes and product barcodes; speaks the format and value.</p>
         <span class="trigger">"Scan this"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">08</span><h3>COLOR &amp; LIGHT</h3><span class="m-ic">🎨</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">08</span>
+        <h3>Color &amp; Light</h3>
         <p>Answers both questions in one look: what color, and is it bright or dark.</p>
         <span class="trigger">"What color is this?"</span>
       </div>
-      <div class="mode-card">
-        <div class="m-head"><span class="m-num">09</span><h3>WAKE WORD</h3><span class="m-ic">🗣️</span></div>
+      <div class="mode-card tc-reveal">
+        <span class="m-num">09</span>
+        <h3>Wake Word</h3>
         <p>Just say "Hey Sightline" — the phone buzzes, wakes, and starts listening. Fully offline.</p>
         <span class="trigger">"Hey Sightline"</span>
       </div>
@@ -636,99 +720,70 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--p
 </section>
 
 <!-- Use cases -->
-<section id="usecases">
-  <div class="container">
+<section class="section bands" id="usecases">
+  <div class="wrap">
     <div class="sec-head center">
-      <span class="kicker">Real-World Use Cases</span>
-      <h2 class="sec-title">Same places. <span class="gold">More freedom.</span></h2>
-      <p>From everyday tasks to unfamiliar spaces — one step at a time.</p>
+      <span class="sec-index tc-reveal">05 / Use Cases</span>
+      <h2 class="sec-title tc-reveal">Same Places. <span class="accent">More Freedom.</span></h2>
+      <p class="tc-reveal">From everyday tasks to unfamiliar spaces — one step at a time.</p>
     </div>
-    <div class="uc-grid">
-      <div class="uc-card">
-        <div class="uc-vis">
-          <span class="uc-num">01 · FIND</span>
-          <span class="uc-obj">🚰 Everyday Objects</span>
-          <span class="uc-dist">Water bottle · 0.4 m</span>
-          <div class="uc-arrow">↓</div>
-        </div>
-        <div class="uc-body">
-          <span class="ask">"Where's my water bottle?"</span>
-          <span class="resp">"On the table, <b>40 centimetres</b>, slightly left."</span>
-        </div>
+    <div class="tc-reveal">
+      <div class="uc-item">
+        <span class="uc-num">01 · Find</span>
+        <span class="uc-obj">Everyday Objects<b class="uc-dist">Water Bottle · 0.4 M</b></span>
+        <span><span class="ask">"Where's my water bottle?"</span><span class="resp">"On the table, <b>40 centimetres</b>, slightly left."</span></span>
       </div>
-      <div class="uc-card">
-        <div class="uc-vis">
-          <span class="uc-num">02 · NAVIGATE</span>
-          <span class="uc-obj">🚪 Move with Confidence</span>
-          <span class="uc-dist">Door · 3.0 m</span>
-          <div class="uc-arrow">↓</div>
-        </div>
-        <div class="uc-body">
-          <span class="ask">"Find the door."</span>
-          <span class="resp">"Door ahead, <b>to your right</b>. Three metres."</span>
-        </div>
+      <div class="uc-item">
+        <span class="uc-num">02 · Navigate</span>
+        <span class="uc-obj">Move With Confidence<b class="uc-dist">Door · 3.0 M</b></span>
+        <span><span class="ask">"Find the door."</span><span class="resp">"Door ahead, <b>to your right</b>. Three metres."</span></span>
       </div>
-      <div class="uc-card">
-        <div class="uc-vis">
-          <span class="uc-num">03 · ACT</span>
-          <span class="uc-obj">🪑 Interact in Spaces</span>
-          <span class="uc-dist">Empty seat · 1.5 m</span>
-          <div class="uc-arrow">↓</div>
-        </div>
-        <div class="uc-body">
-          <span class="ask">"Help me find a free seat."</span>
-          <span class="resp">"One empty chair ahead, <b>1.5 metres</b>, slightly right."</span>
-        </div>
+      <div class="uc-item">
+        <span class="uc-num">03 · Act</span>
+        <span class="uc-obj">Interact In Spaces<b class="uc-dist">Empty Seat · 1.5 M</b></span>
+        <span><span class="ask">"Help me find a free seat."</span><span class="resp">"One empty chair ahead, <b>1.5 metres</b>, slightly right."</span></span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- How it works -->
-<section style="background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
-  <div class="container hiw">
-    <div class="hiw-side">
-      <span class="kicker">The Engine</span>
-      <div class="h-slug">From intent to independence.</div>
-      <p style="color: var(--ink-3); font-size: 0.95rem; margin-top: 14px;">
-        SIGHTLINE combines voice, vision and spatial AI to understand your intent, interpret the
-        real world, and give short, actionable spoken guidance.
-      </p>
-      <div class="h-badge">
-        <span>Real-time response</span>
-        <span>On-device, privacy first</span>
-        <span>Works offline</span>
-      </div>
+<!-- Engine -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-index tc-reveal">06 / The Engine</span>
+      <h2 class="sec-title tc-reveal">From Intent To <span class="accent">Independence.</span></h2>
+      <p class="tc-reveal">SIGHTLINE combines voice, vision and spatial AI to understand your intent, interpret the real world, and give short, actionable spoken guidance.</p>
     </div>
-    <div class="hiw-steps">
-      <div class="hiw-step">
+    <div class="engine-steps tc-reveal">
+      <div class="step">
         <div class="d">1</div>
         <div>
-          <h4>Understand intent</h4>
+          <h4>Understand Intent</h4>
           <p>Voice processing transcribes your command and understands what you're trying to do.</p>
           <span class="io">"Find the chair near me" → Intent: Find · Target: Chair</span>
         </div>
       </div>
-      <div class="hiw-step">
+      <div class="step">
         <div class="d">2</div>
         <div>
-          <h4>See the scene</h4>
+          <h4>See The Scene</h4>
           <p>Camera frames run through object detection to detect and map everything in view.</p>
           <span class="io">Detect &amp; map objects in the scene</span>
         </div>
       </div>
-      <div class="hiw-step">
+      <div class="step">
         <div class="d">3</div>
         <div>
-          <h4>Reason in space</h4>
+          <h4>Reason In Space</h4>
           <p>Spatial AI estimates distance, direction and a safe path — in real time.</p>
-          <span class="io">Distance: 2.1 m · Direction: slightly left · Path: clear</span>
+          <span class="io">Distance: 2.1 M · Direction: Slightly Left · Path: Clear</span>
         </div>
       </div>
-      <div class="hiw-step">
+      <div class="step">
         <div class="d">4</div>
         <div>
-          <h4>Guide with voice</h4>
+          <h4>Guide With Voice</h4>
           <p>Results become short, natural spoken directions. Speak and guide in real time.</p>
           <span class="io">"The chair is 2.1 metres ahead. Slightly left. Move forward."</span>
         </div>
@@ -738,73 +793,74 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--p
 </section>
 
 <!-- Technology -->
-<section class="tech" id="tech">
-  <div class="container">
+<section class="section bands" id="tech">
+  <div class="wrap">
     <div class="sec-head center">
-      <span class="kicker">Technology</span>
-      <h2 class="sec-title">Powerful AI. On your phone. <span class="gold">In real time.</span></h2>
-      <p>SIGHTLINE combines state-of-the-art AI models with on-device processing — fast, private, reliable. Anywhere, anytime.</p>
+      <span class="sec-index tc-reveal">07 / Technology</span>
+      <h2 class="sec-title tc-reveal">Powerful AI. On Your Phone. <span class="accent">In Real Time.</span></h2>
+      <p class="tc-reveal">SIGHTLINE combines state-of-the-art AI models with on-device processing — fast, private, reliable. Anywhere, anytime.</p>
     </div>
     <div class="tech-grid">
-      <div class="tech-card">
-        <div class="t-ic">👁️</div>
+      <div class="tech-card tc-reveal">
+        <span class="t-ic">◉</span>
         <h4>Computer Vision</h4>
         <p>Detects and understands real-world objects.</p>
         <span class="eg">YOLOv8n · TFLite</span>
       </div>
-      <div class="tech-card">
-        <div class="t-ic">💬</div>
+      <div class="tech-card tc-reveal">
+        <span class="t-ic">◎</span>
         <h4>Goal Understanding</h4>
         <p>Understands your intent and scene context.</p>
-        <span class="eg">Intent parsing · on-device</span>
+        <span class="eg">Intent Parsing · On-Device</span>
       </div>
-      <div class="tech-card">
-        <div class="t-ic">📐</div>
+      <div class="tech-card tc-reveal">
+        <span class="t-ic">⧉</span>
         <h4>Spatial Intelligence</h4>
         <p>Estimates distance, direction and safe paths.</p>
-        <span class="eg">Monocular depth + tracking</span>
+        <span class="eg">Monocular Depth + Tracking</span>
       </div>
-      <div class="tech-card">
-        <div class="t-ic">🎙️</div>
+      <div class="tech-card tc-reveal">
+        <span class="t-ic">◌</span>
         <h4>Speech</h4>
         <p>Natural, conversational voice guidance.</p>
-        <span class="eg">STT + TTS · on-device</span>
+        <span class="eg">STT + TTS · On-Device</span>
       </div>
     </div>
-    <div class="tech-strip">
-      <span>Fast</span>
-      <span>Private</span>
-      <span>Reliable</span>
-      <span>Real-time response</span>
-      <span>On-device processing</span>
-      <span>Works offline</span>
+    <div class="tech-strip tc-reveal">
+      <span class="tc-badge">Fast</span>
+      <span class="tc-badge">Private</span>
+      <span class="tc-badge">Reliable</span>
+      <span class="tc-badge">Real-Time Response</span>
+      <span class="tc-badge">On-Device Processing</span>
+      <span class="tc-badge">Works Offline</span>
     </div>
   </div>
 </section>
 
 <!-- Download -->
-<section class="download">
-  <div class="container">
-    <h2>Try SIGHTLINE <span class="gold">on your phone</span></h2>
-    <p>Download the APK, install it, and hear what it sees. Free forever — built for the iQOO Hackathon 2026.</p>
-    <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-gold btn-gold-lg">📲 Download Sightline.apk</a>
-    <div class="dl-steps">
+<section class="section download" id="download">
+  <div class="wrap">
+    <span class="lbl tc-reveal">08 / Download</span>
+    <h2 class="tc-reveal">Try SIGHTLINE <span class="accent">On Your Phone</span></h2>
+    <p class="tc-reveal">Download the APK, install it, and hear what it sees. Free forever — built for the iQOO Hackathon 2026.</p>
+    <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="tc-btn tc-reveal" style="padding: 22px 46px; font-size: 0.95rem;">Download Sightline.apk</a>
+    <div class="dl-steps tc-reveal">
       <div class="dl-step"><span class="n">1.</span><p>Download the APK (90 MB)</p></div>
       <div class="dl-step"><span class="n">2.</span><p>Allow "Install from unknown sources"</p></div>
-      <div class="dl-step"><span class="n">3.</span><p>Grant Camera &amp; Microphone, then say <em>"Hey Sightline"</em></p></div>
+      <div class="dl-step"><span class="n">3.</span><p>Grant Camera &amp; Microphone, then say "Hey Sightline"</p></div>
     </div>
   </div>
 </section>
 
 <!-- Team -->
-<section id="team">
-  <div class="container">
+<section class="section bands" id="team">
+  <div class="wrap">
     <div class="sec-head center">
-      <span class="kicker">For the Builders, By the Builders</span>
-      <h2 class="sec-title">Same minds. <span class="gold">Greater impact.</span></h2>
+      <span class="sec-index tc-reveal">09 / The Team</span>
+      <h2 class="sec-title tc-reveal">For The Builders, <span class="accent">By The Builders.</span></h2>
     </div>
     <div class="team-grid">
-      <div class="team-card">
+      <div class="team-card tc-reveal">
         <div class="team-avatar">AK</div>
         <div>
           <h3>Akhil</h3>
@@ -812,7 +868,7 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--p
           <p>Turning ideas into real-world impact with technology.</p>
         </div>
       </div>
-      <div class="team-card">
+      <div class="team-card tc-reveal">
         <div class="team-avatar">RM</div>
         <div>
           <h3>Ramya</h3>
@@ -821,20 +877,134 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--p
         </div>
       </div>
     </div>
-    <p class="team-motto">Building a more inclusive tomorrow — <em>ideas without limits.</em></p>
+    <p class="team-motto tc-reveal">Building a more inclusive tomorrow — <em>ideas without limits.</em></p>
   </div>
 </section>
 
 <!-- Footer -->
 <footer>
-  <div class="container foot-inner">
-    <div class="foot-tag">
-      People <span class="g">|</span> Technology <span class="g">|</span> A More Inclusive World
-    </div>
-    <div class="foot-brand">SIGHT<span class="gold">LINE</span></div>
-    <div class="foot-tag">iQOO Hackathon 2026 · AI-Powered <span class="g">·</span> Open Innovation</div>
+  <div class="wrap foot-inner">
+    <div class="foot-tag">People <span class="sep">|</span> Technology <span class="sep">|</span> A More Inclusive World</div>
+    <div class="foot-brand">SIGHT<span class="accent">LINE</span></div>
+    <div class="foot-tag">iQOO Hackathon 2026 · AI-Powered · <span class="sep">Open Innovation</span></div>
   </div>
 </footer>
+
+<script>
+/* ---------- Scroll progress ---------- */
+(function () {
+  var bar = document.getElementById("scrollProgress");
+  function update() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+  }
+  document.addEventListener("scroll", update, { passive: true });
+  update();
+})();
+
+/* ---------- Mouse spotlight ---------- */
+(function () {
+  var spot = document.getElementById("spotlight");
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced || !spot) return;
+  if (!window.matchMedia("(pointer: fine)").matches) return;
+  document.addEventListener("mousemove", function (e) {
+    spot.style.setProperty("--mx", e.clientX + "px");
+    spot.style.setProperty("--my", e.clientY + "px");
+  });
+})();
+
+/* ---------- Text scramble (hero title) ---------- */
+(function () {
+  var el = document.getElementById("heroTitle");
+  if (!el) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ<>/{}[]|=+*#";
+  var target = el.textContent;
+  var frame = 0;
+  var total = target.length * 7 + 60;
+  function tick() {
+    var out = "";
+    for (var i = 0; i < target.length; i++) {
+      if (i < frame / 7 - 2) out += target[i];
+      else out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    el.textContent = out;
+    frame++;
+    if (frame < total) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  var started = false;
+  function start() {
+    if (started) return;
+    started = true;
+    setTimeout(tick, 350);
+  }
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { start(); io.disconnect(); } });
+    }, { threshold: 0.4 });
+    io.observe(el);
+  } else start();
+})();
+
+/* ---------- Animated counters ---------- */
+(function () {
+  var els = document.querySelectorAll("[data-count]");
+  if (!els.length) return;
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function animate(el) {
+    var target = parseFloat(el.getAttribute("data-count"));
+    var decimals = parseInt(el.getAttribute("data-decimals") || "0", 10);
+    var suffix = el.getAttribute("data-suffix") || "";
+    var duration = 2000;
+    var t0 = null;
+    function fmt(v) { return v.toFixed(decimals) + suffix; }
+    function step(ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min((ts - t0) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(target * eased);
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = fmt(target);
+    }
+    requestAnimationFrame(step);
+  }
+  if (reduced) {
+    els.forEach(function (el) { el.textContent = parseFloat(el.getAttribute("data-count")).toFixed(parseInt(el.getAttribute("data-decimals") || "0", 10)) + (el.getAttribute("data-suffix") || ""); });
+    return;
+  }
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { animate(en.target); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.4 });
+    els.forEach(function (el) { io.observe(el); });
+  } else els.forEach(animate);
+})();
+
+/* ---------- Scroll reveal ---------- */
+(function () {
+  var els = document.querySelectorAll(".tc-reveal");
+  if (!els.length) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    els.forEach(function (el) { el.classList.add("tc-reveal-visible"); });
+    return;
+  }
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add("tc-reveal-visible"); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+    els.forEach(function (el) { io.observe(el); });
+  } else {
+    els.forEach(function (el) { el.classList.add("tc-reveal-visible"); });
+  }
+})();
+</script>
 
 </body>
 </html>
