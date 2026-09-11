@@ -3,386 +3,836 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIGHTLINE — Don't Just See. Understand.</title>
-<meta name="description" content="SIGHTLINE — an AI assistant for visually impaired users. 100% offline. Speaks what matters, not everything it sees.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%232196F3'/><circle cx='35' cy='42' r='8' fill='white'/><path d='M30 65 Q45 50 70 65' stroke='white' stroke-width='6' fill='none' stroke-linecap='round'/></svg>">
+<title>SIGHTLINE — AI for a More Independent Tomorrow</title>
+<meta name="description" content="SIGHTLINE — a phone-first AI assistant that turns visual scenes into short, actionable spoken guidance for people with visual impairment. Built for the iQOO Hackathon 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23DFAF41'/><path d='M24 60 Q50 34 76 60' stroke='%2312161F' stroke-width='7' fill='none' stroke-linecap='round'/></svg>">
 <style>
 :root {
-  --bg: #0a0e17;
-  --bg-2: #0f1522;
-  --card: #131a2b;
-  --border: #1e2a41;
-  --text: #e8eef7;
-  --muted: #8b97ad;
-  --accent: #2196F3;
-  --accent-2: #00E5FF;
-  --success: #4CAF50;
-  --radius: 16px;
+  --paper: #F2EFEA;
+  --paper-2: #F0EDE8;
+  --paper-3: #E9E5DD;
+  --ink: #12161F;
+  --ink-2: #2A303C;
+  --ink-3: #5A6170;
+  --gold: #DFAF41;
+  --gold-soft: #EBC97E;
+  --gold-pale: #F6E7C1;
+  --line: rgba(18, 22, 31, 0.14);
+  --white: #FFFFFF;
+  --font-head: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-serif: 'Fraunces', serif;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
   line-height: 1.6;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.container { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+img { max-width: 100%; display: block; }
+a { text-decoration: none; color: inherit; }
+
+/* ---------- Marquee strip (deck header) ---------- */
+.marquee {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 3px solid var(--gold);
+}
+.marquee-track {
+  display: inline-block;
+  animation: marquee 42s linear infinite;
+  font-family: var(--font-head);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.marquee-track span { margin: 0 28px; }
+.marquee-track .g { color: var(--gold); }
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
 
 /* ---------- Nav ---------- */
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10, 14, 23, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-}
-.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px; }
-.logo-dot { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; }
-.logo-dot svg { width: 18px; height: 18px; }
-.nav-links { display: flex; gap: 28px; align-items: center; }
-.nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
-.nav-links a:hover { color: var(--text); }
+.nav { position: sticky; top: 0; z-index: 100; background: rgba(242, 239, 234, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+.logo { display: flex; align-items: center; gap: 12px; font-family: var(--font-head); font-weight: 700; font-size: 1.18rem; letter-spacing: 0.14em; }
+.logo-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--gold); display: grid; place-items: center; }
+.logo-mark svg { width: 20px; height: 20px; }
+.logo small { display: block; font-size: 0.55rem; letter-spacing: 0.3em; color: var(--ink-3); font-weight: 500; }
+.nav-links { display: flex; gap: 30px; align-items: center; }
+.nav-links a { font-size: 0.85rem; font-weight: 500; color: var(--ink-2); border-bottom: 2px solid transparent; padding: 4px 0; transition: border-color .2s, color .2s; }
+.nav-links a:hover { color: var(--ink); border-bottom-color: var(--gold); }
 .nav-cta {
-  background: var(--accent); color: white !important; padding: 8px 18px;
-  border-radius: 8px; font-weight: 600;
+  background: var(--ink); color: var(--paper) !important;
+  padding: 10px 20px; border-radius: 8px; font-weight: 600;
+  font-size: 0.85rem; border: none !important;
+  transition: background .2s, transform .15s;
 }
+.nav-cta:hover { background: var(--ink-2); transform: translateY(-1px); }
 
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
-  padding: 110px 0 90px;
-  text-align: center;
+  padding: 96px 0 88px;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 50% -10%, rgba(33, 150, 243, 0.22), transparent),
-    radial-gradient(ellipse 40% 40% at 85% 20%, rgba(0, 229, 255, 0.08), transparent);
+    radial-gradient(circle 500px at 82% 12%, rgba(223, 175, 65, 0.10), transparent 70%),
+    radial-gradient(circle 420px at 8% 88%, rgba(18, 22, 31, 0.05), transparent 70%);
+  pointer-events: none;
 }
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--card); border: 1px solid var(--border);
-  padding: 6px 16px; border-radius: 100px;
-  font-size: 0.8rem; color: var(--accent-2); margin-bottom: 24px;
+.hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 64px; align-items: center; position: relative; }
+.kicker {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-head); font-size: 0.72rem;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 20px;
+  font-weight: 600;
 }
+.kicker::before { content: ""; width: 34px; height: 2px; background: var(--gold); }
 .hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  font-weight: 800; letter-spacing: 2px; margin-bottom: 16px;
-  background: linear-gradient(135deg, var(--text) 30%, var(--accent));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family: var(--font-head);
+  font-size: clamp(3.2rem, 8vw, 5.6rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 0.98;
+  margin-bottom: 8px;
 }
-.hero .tagline { font-size: clamp(1.1rem, 2.5vw, 1.5rem); color: var(--muted); max-width: 700px; margin: 0 auto 36px; font-style: italic; }
-.hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.hero h1 .gold { color: var(--gold); }
+.hero .sub {
+  font-family: var(--font-head);
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  color: var(--ink-2); font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-bottom: 22px;
+}
+.hero .desc { max-width: 560px; color: var(--ink-3); font-size: 1.02rem; margin-bottom: 34px; }
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
 .btn {
   display: inline-flex; align-items: center; gap: 10px;
-  padding: 14px 32px; border-radius: 12px;
-  font-size: 1rem; font-weight: 600; text-decoration: none; cursor: pointer;
-  border: none; transition: transform 0.15s, box-shadow 0.15s;
+  padding: 15px 28px; border-radius: 10px;
+  font-family: var(--font-head); font-size: 0.95rem; font-weight: 600;
+  letter-spacing: 0.02em; cursor: pointer; border: 1.5px solid transparent;
+  transition: transform .15s, box-shadow .15s, background .2s;
 }
 .btn:hover { transform: translateY(-2px); }
-.btn-primary { background: linear-gradient(135deg, var(--accent), #1976D2); color: white; box-shadow: 0 8px 24px rgba(33, 150, 243, 0.35); }
-.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover { border-color: var(--accent); }
-.hero-stats { display: flex; gap: 48px; justify-content: center; margin-top: 60px; flex-wrap: wrap; }
-.stat { text-align: center; }
-.stat-num { font-size: 2rem; font-weight: 800; color: var(--accent-2); }
-.stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.btn-gold { background: var(--gold); color: var(--ink); box-shadow: 0 10px 26px rgba(223, 175, 65, 0.35); }
+.btn-gold:hover { background: var(--gold-soft); }
+.btn-ink { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn-ink:hover { background: var(--ink); color: var(--paper); }
+.hero-foot {
+  display: flex; gap: 40px; margin-top: 54px; flex-wrap: wrap;
+  border-top: 1px solid var(--line); padding-top: 26px;
+}
+.hero-foot .pill { display: flex; align-items: center; gap: 12px; }
+.hero-foot .pill .ico { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--gold); display: grid; place-items: center; font-size: 0.9rem; }
+.hero-foot .pill b { display: block; font-family: var(--font-head); font-size: 0.82rem; letter-spacing: 0.06em; }
+.hero-foot .pill small { color: var(--ink-3); font-size: 0.72rem; }
+
+/* ---------- Phone mockup (deck style) ---------- */
+.phone-wrap { display: flex; justify-content: center; }
+.phone {
+  width: 300px; background: var(--ink); border-radius: 38px;
+  padding: 14px; box-shadow: 0 30px 70px rgba(18, 22, 31, 0.35), 0 0 0 1px rgba(18,22,31,0.15);
+  position: relative;
+}
+.phone .screen {
+  background: #0C1018; border-radius: 28px; overflow: hidden;
+  min-height: 540px; display: flex; flex-direction: column;
+  color: var(--paper);
+}
+.statusbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px 0; font-size: 0.72rem; font-family: var(--font-head); position: relative; }
+.statusbar .notch { width: 76px; height: 20px; background: #0C1018; border-radius: 12px; position: absolute; left: 50%; transform: translateX(-50%); top: 14px; border: 1px solid #1A1F2B; }
+.phone-screen-head { text-align: center; padding: 20px 0 4px; }
+.phone-screen-head .app { font-family: var(--font-head); font-weight: 700; letter-spacing: 0.22em; font-size: 0.95rem; color: var(--gold); }
+.phone-screen-head .mod { font-size: 0.6rem; letter-spacing: 0.3em; color: var(--paper-3); text-transform: uppercase; margin-top: 4px; opacity: .7; }
+.viewfinder {
+  margin: 18px 16px 14px; border-radius: 14px; height: 185px;
+  background:
+    radial-gradient(circle at 50% 55%, rgba(223,175,65,0.12), transparent 60%),
+    linear-gradient(160deg, #141A26 0%, #0C1018 60%, #10151F 100%);
+  border: 1px solid rgba(223,175,65,0.25);
+  position: relative; overflow: hidden;
+}
+.viewfinder::after {
+  content: ""; position: absolute; left: 8%; right: 8%; top: 50%; transform: translateY(-50%);
+  height: 1px; background: rgba(223,175,65,0.45);
+}
+.viewfinder .obj {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 76px; height: 112px; border: 1.6px solid var(--gold);
+  border-radius: 8px;
+  display: grid; place-items: end center; padding-bottom: 6px;
+  font-family: var(--font-head); font-size: 0.6rem; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase;
+}
+.tel-grid { padding: 0 18px 14px; display: grid; gap: 8px; }
+.tel-row {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid rgba(242,239,234,0.08); padding-bottom: 8px;
+}
+.tel-row:last-child { border: none; }
+.tel-row .k { font-size: 0.58rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--paper-3); opacity: .65; }
+.tel-row .v { font-family: var(--font-head); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.04em; }
+.tel-row .v.gold { color: var(--gold); }
+.tel-cta { margin: 2px 18px 0; background: var(--gold); color: var(--ink); border-radius: 12px; text-align: center; padding: 13px; font-family: var(--font-head); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.04em; }
+.phone-nav { display: flex; justify-content: space-around; padding: 16px 14px; border-top: 1px solid rgba(242,239,234,0.08); }
+.phone-nav div { text-align: center; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-3); opacity: .8; }
+.phone-nav div b { display: block; font-size: 1rem; margin-bottom: 3px; color: var(--gold); }
+
+/* ---------- Pillars band ---------- */
+.pillars { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper-2); }
+.pillars-inner { display: grid; grid-template-columns: repeat(3, 1fr); }
+.pillar { padding: 26px 30px; border-right: 1px solid var(--line); }
+.pillar:last-child { border-right: none; }
+.pillar .n { font-family: var(--font-head); font-size: 0.72rem; letter-spacing: 0.3em; color: var(--gold); font-weight: 700; }
+.pillar h3 { font-family: var(--font-head); font-size: 1.05rem; margin: 8px 0 6px; letter-spacing: 0.04em; }
+.pillar p { font-size: 0.85rem; color: var(--ink-3); }
 
 /* ---------- Sections ---------- */
-section { padding: 80px 0; }
-.section-title { text-align: center; font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700; margin-bottom: 12px; }
-.section-sub { text-align: center; color: var(--muted); max-width: 640px; margin: 0 auto 56px; }
+section { padding: 96px 0; }
+.sec-head { max-width: 720px; margin-bottom: 60px; }
+.sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+.sec-head .kicker { margin-bottom: 16px; }
+.sec-head.center .kicker::before { display: none; }
+.sec-title { font-family: var(--font-head); font-size: clamp(1.9rem, 4.6vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: 0.01em; }
+.sec-title .gold { color: var(--gold); }
+.sec-head p { color: var(--ink-3); margin-top: 16px; font-size: 1rem; }
 
-/* ---------- Screenshot ---------- */
-.mockup-wrap { display: grid; place-items: center; }
-.mockup {
-  max-width: 320px; width: 100%;
-  border-radius: 36px; border: 1px solid var(--border);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-  overflow: hidden; background: black;
+/* ---------- Problem (dark band) ---------- */
+.problem { background: var(--ink); color: var(--paper); position: relative; overflow: hidden; }
+.problem::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle 600px at 88% 30%, rgba(223,175,65,0.10), transparent 70%);
+  pointer-events: none;
 }
-.mockup img { width: 100%; display: block; }
+.problem .sec-head .kicker { color: var(--gold); }
+.problem .sec-title { color: var(--paper); }
+.problem .sec-head p { color: rgba(242,239,234,0.65); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.cmp-card { background: rgba(242,239,234,0.05); border: 1px solid rgba(242,239,234,0.12); border-radius: 16px; padding: 30px; }
+.cmp-card .label { font-family: var(--font-head); font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase; margin-bottom: 16px; }
+.cmp-card.no .label { color: rgba(242,239,234,0.5); }
+.cmp-card.yes .label { color: var(--gold); }
+.cmp-card.no .quote { color: rgba(242,239,234,0.55); text-decoration: line-through; text-decoration-color: rgba(223,175,65,0.5); }
+.cmp-card.yes { border-color: rgba(223,175,65,0.5); background: rgba(223,175,65,0.07); }
+.cmp-card .quote { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.5; }
+.cmp-card.yes .quote { color: var(--gold-soft); }
+.cmp-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+.cmp-tags span { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 12px; border-radius: 100px; border: 1px solid currentColor; }
+.cmp-card.no .cmp-tags span { color: rgba(242,239,234,0.4); }
+.cmp-card.yes .cmp-tags span { color: var(--gold); }
 
-/* ---------- Features ---------- */
-.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-.feature {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 28px;
-  transition: border-color 0.2s, transform 0.2s;
+/* ---------- Insight ---------- */
+.insight-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 60px; align-items: center; }
+.insight-quote { font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.4; }
+.insight-quote em { color: var(--gold); font-style: normal; border-bottom: 2px solid var(--gold); }
+.insight-boxes { display: grid; gap: 18px; }
+.insight-box {
+  border: 1px solid var(--line); border-radius: 16px; padding: 26px;
+  display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;
+  background: var(--paper-2);
 }
-.feature:hover { border-color: var(--accent); transform: translateY(-3px); }
-.feature-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 16px; font-size: 1.3rem; }
-.feature h3 { font-size: 1.1rem; margin-bottom: 8px; }
-.feature p { color: var(--muted); font-size: 0.9rem; }
-.feature .trigger { display: inline-block; margin-top: 12px; font-size: 0.75rem; color: var(--accent-2); background: rgba(0, 229, 255, 0.08); padding: 3px 10px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, monospace; }
+.insight-box .tag { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-weight: 700; padding-top: 4px; }
+.insight-box h4 { font-family: var(--font-head); font-size: 1.02rem; margin-bottom: 6px; }
+.insight-box p { font-size: 0.88rem; color: var(--ink-3); }
+.insight-box.same { border-left: 4px solid var(--ink-3); }
+.insight-box.diff { border-left: 4px solid var(--gold); }
 
-.f1 { background: rgba(33, 150, 243, 0.12); } .f2 { background: rgba(76, 175, 80, 0.12); }
-.f3 { background: rgba(255, 152, 0, 0.12); } .f4 { background: rgba(156, 39, 176, 0.12); }
-.f5 { background: rgba(0, 229, 255, 0.12); } .f6 { background: rgba(244, 67, 54, 0.12); }
-.f7 { background: rgba(255, 235, 59, 0.12); } .f8 { background: rgba(233, 30, 99, 0.12); }
-.f9 { background: rgba(63, 81, 181, 0.12); }
+/* ---------- Product flow ---------- */
+.flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.flow-step { border: 1px solid var(--line); border-radius: 18px; padding: 34px 30px; background: var(--paper-2); position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.flow-step:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(18,22,31,0.09); }
+.flow-step .big { font-family: var(--font-head); font-size: 4.4rem; font-weight: 700; color: transparent; -webkit-text-stroke: 1.5px var(--gold); position: absolute; top: 8px; right: 18px; line-height: 1; opacity: .9; }
+.flow-step .ic { width: 46px; height: 46px; border-radius: 12px; background: var(--gold); display: grid; place-items: center; font-size: 1.25rem; margin-bottom: 22px; }
+.flow-step h3 { font-family: var(--font-head); font-size: 1.22rem; margin-bottom: 8px; letter-spacing: 0.02em; }
+.flow-step .q { font-family: var(--font-serif); font-style: italic; color: var(--ink-2); font-size: 0.98rem; margin-bottom: 12px; display: block; }
+.flow-step p { font-size: 0.88rem; color: var(--ink-3); }
 
-/* ---------- Tech ---------- */
-.tech { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-.tech-chip {
-  background: var(--card); border: 1px solid var(--border);
-  padding: 10px 20px; border-radius: 100px; font-size: 0.9rem;
-  transition: border-color 0.2s;
+/* ---------- Modes ---------- */
+.modes { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.modes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.mode-card {
+  border: 1px solid var(--line); border-radius: 16px; padding: 26px;
+  background: var(--paper); transition: transform .2s, box-shadow .2s, border-color .2s;
 }
-.tech-chip:hover { border-color: var(--accent-2); }
+.mode-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(18,22,31,0.08); border-color: rgba(223,175,65,0.55); }
+.mode-card .m-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.mode-card .m-num { font-family: var(--font-head); font-size: 0.66rem; letter-spacing: 0.2em; color: var(--gold); font-weight: 700; }
+.mode-card .m-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--paper-3); display: grid; place-items: center; font-size: 1.1rem; margin-left: auto; }
+.mode-card h3 { font-family: var(--font-head); font-size: 1.05rem; letter-spacing: 0.03em; }
+.mode-card p { font-size: 0.85rem; color: var(--ink-3); }
+.mode-card .trigger { display: inline-block; margin-top: 14px; font-size: 0.7rem; color: var(--ink-2); background: var(--gold-pale); padding: 4px 12px; border-radius: 100px; font-family: var(--font-head); letter-spacing: 0.03em; }
+
+/* ---------- Use cases ---------- */
+.uc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.uc-card { border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: var(--paper-2); }
+.uc-vis { padding: 34px 30px 26px; border-bottom: 1px solid var(--line); position: relative; }
+.uc-vis .uc-num { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.28em; color: var(--gold); font-weight: 700; }
+.uc-vis .uc-obj { display: block; font-family: var(--font-head); font-size: 2rem; font-weight: 700; margin-top: 10px; }
+.uc-vis .uc-dist { font-family: var(--font-serif); font-style: italic; color: var(--ink-3); font-size: 0.95rem; display: block; margin-top: 4px; }
+.uc-arrow { font-size: 1.4rem; color: var(--gold); margin-top: 14px; }
+.uc-body { padding: 24px 30px 28px; }
+.uc-body .ask { font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; margin-bottom: 10px; display: block; }
+.uc-body .resp { display: block; font-family: var(--font-head); font-size: 0.86rem; line-height: 1.7; color: var(--ink-2); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+.uc-body .resp b { color: var(--gold); }
 
 /* ---------- How it works ---------- */
-.pipeline { display: flex; flex-direction: column; gap: 0; max-width: 700px; margin: 0 auto; }
-.pipe-step { display: flex; gap: 20px; align-items: flex-start; }
-.pipe-num {
-  min-width: 40px; height: 40px; border-radius: 50%;
-  background: var(--card); border: 1px solid var(--accent);
-  display: grid; place-items: center; font-weight: 700; color: var(--accent-2);
+.hiw { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 64px; align-items: center; }
+.hiw-side .h-slug { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 14px; }
+.hiw-side .h-badge { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+.hiw-side .h-badge span { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; border: 1.5px solid var(--gold); color: var(--ink); padding: 8px 16px; border-radius: 100px; font-weight: 600; }
+.hiw-steps { display: grid; gap: 0; }
+.hiw-step { display: grid; grid-template-columns: 54px 1fr; gap: 20px; padding-bottom: 30px; position: relative; }
+.hiw-step::before { content: ""; position: absolute; left: 26.5px; top: 54px; bottom: 0; width: 1px; background: var(--line); }
+.hiw-step:last-child::before { display: none; }
+.hiw-step .d { width: 54px; height: 54px; border-radius: 50%; border: 1.5px solid var(--gold); display: grid; place-items: center; font-family: var(--font-head); font-weight: 700; color: var(--ink); background: var(--paper); z-index: 1; }
+.hiw-step:nth-child(even) .d { background: var(--gold); color: var(--paper); }
+.hiw-step h4 { font-family: var(--font-head); font-size: 1.02rem; margin: 4px 0 6px; }
+.hiw-step p { font-size: 0.88rem; color: var(--ink-3); }
+.hiw-step .io { font-size: 0.7rem; font-family: var(--font-head); color: var(--gold); letter-spacing: 0.08em; display: block; margin-top: 8px; }
+
+/* ---------- Tech ---------- */
+.tech { border-top: 1px solid var(--line); background: var(--paper); }
+.tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.tech-card { border: 1px solid var(--line); border-radius: 16px; padding: 26px 22px; text-align: center; background: var(--paper-2); }
+.tech-card .t-ic { font-size: 1.6rem; margin-bottom: 14px; }
+.tech-card h4 { font-family: var(--font-head); font-size: 0.92rem; margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; }
+.tech-card p { font-size: 0.78rem; color: var(--ink-3); }
+.tech-card .eg { display: block; margin-top: 10px; font-size: 0.66rem; color: var(--gold); font-family: var(--font-head); letter-spacing: 0.06em; }
+.tech-strip {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 48px;
+  border-top: 1px solid var(--line); padding-top: 36px;
 }
-.pipe-line { width: 1px; height: 32px; background: var(--border); margin-left: 19.5px; }
-.pipe-body { padding-top: 8px; }
-.pipe-body h4 { font-size: 1rem; margin-bottom: 4px; }
-.pipe-body p { color: var(--muted); font-size: 0.9rem; }
+.tech-strip span { font-family: var(--font-head); font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink); font-weight: 600; padding: 9px 20px; border: 1.5px solid var(--ink); border-radius: 100px; }
 
 /* ---------- Download CTA ---------- */
-.cta {
-  background: var(--bg-2); border: 1px solid var(--border);
-  border-radius: 24px; padding: 56px 40px; text-align: center;
+.download { background: var(--ink); color: var(--paper); text-align: center; position: relative; overflow: hidden; }
+.download::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle 520px at 50% -10%, rgba(223,175,65,0.16), transparent 70%);
+  pointer-events: none;
 }
-.cta h2 { font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 12px; }
-.cta p { color: var(--muted); max-width: 520px; margin: 0 auto 32px; }
-.dl-steps { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; margin-top: 40px; text-align: left; }
-.dl-step { max-width: 260px; }
-.dl-step .n { color: var(--accent-2); font-weight: 800; font-size: 1.2rem; }
-.dl-step p { margin-top: 4px; font-size: 0.85rem; }
+.download h2 { font-family: var(--font-head); font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.08; margin-bottom: 18px; }
+.download h2 .gold { color: var(--gold); }
+.download > .container > p { color: rgba(242,239,234,0.65); max-width: 540px; margin: 0 auto 36px; }
+.btn-gold-lg { background: var(--gold); color: var(--ink); padding: 18px 44px; font-size: 1.05rem; box-shadow: 0 14px 40px rgba(223,175,65,0.4); }
+.dl-steps { display: flex; gap: 44px; justify-content: center; flex-wrap: wrap; margin-top: 54px; text-align: left; }
+.dl-step { max-width: 240px; }
+.dl-step .n { color: var(--gold); font-family: var(--font-head); font-weight: 700; font-size: 1.2rem; }
+.dl-step p { margin-top: 6px; font-size: 0.85rem; color: rgba(242,239,234,0.65); }
+
+/* ---------- Team ---------- */
+.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.team-card { border: 1px solid var(--line); border-radius: 18px; padding: 34px; background: var(--paper-2); display: flex; gap: 26px; align-items: center; }
+.team-avatar {
+  width: 88px; height: 88px; border-radius: 50%; background: var(--ink);
+  color: var(--gold); display: grid; place-items: center;
+  font-family: var(--font-head); font-weight: 700; font-size: 1.8rem;
+  flex-shrink: 0; border: 2px solid var(--gold);
+}
+.team-card h3 { font-family: var(--font-head); font-size: 1.2rem; }
+.team-card .role { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; font-family: var(--font-head); font-weight: 600; margin: 4px 0 10px; display: block; }
+.team-card p { font-size: 0.88rem; color: var(--ink-3); }
+.team-motto { font-family: var(--font-serif); font-style: italic; text-align: center; font-size: 1.3rem; margin-top: 48px; color: var(--ink-2); }
+.team-motto em { color: var(--gold); font-style: normal; }
 
 /* ---------- Footer ---------- */
-footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; }
-footer p { color: var(--muted); font-size: 0.85rem; }
-footer a { color: var(--accent); text-decoration: none; }
-footer a:hover { text-decoration: underline; }
+footer { border-top: 1px solid var(--line); padding: 44px 0; background: var(--paper-2); }
+.foot-inner { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+.foot-tag { font-family: var(--font-head); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); }
+.foot-tag .g { color: var(--gold); font-weight: 600; }
+.foot-brand { font-family: var(--font-head); font-weight: 700; letter-spacing: 0.16em; }
+.foot-brand .gold { color: var(--gold); }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+  .phone-wrap { order: -1; }
+  .pillars-inner { grid-template-columns: 1fr; }
+  .pillar { border-right: none; border-bottom: 1px solid var(--line); }
+  .pillar:last-child { border-bottom: none; }
+  .problem .compare, .insight-grid, .hiw { grid-template-columns: 1fr; }
+  .modes-grid, .uc-grid { grid-template-columns: repeat(2, 1fr); }
+  .tech-grid { grid-template-columns: repeat(2, 1fr); }
+  .team-grid { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: 1fr; }
+}
 @media (max-width: 640px) {
   .nav-links a:not(.nav-cta) { display: none; }
-  .hero { padding: 70px 0 60px; }
-  section { padding: 56px 0; }
-  .hero-stats { gap: 28px; }
-  .dl-steps { gap: 24px; }
+  section { padding: 68px 0; }
+  .modes-grid, .uc-grid, .tech-grid { grid-template-columns: 1fr; }
+  .dl-steps { gap: 28px; }
+  .team-card { flex-direction: column; text-align: center; }
 }
 </style>
 </head>
 <body>
 
+<!-- Marquee strip -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span>BUILD</span><span class="g">|</span><span>SHAPE</span><span class="g">|</span><span>GREAT IDEAS</span><span class="g">|</span><span>DON'T NEED DESKS</span><span class="g">|</span><span>iQOO HACKATHON</span><span class="g">|</span><span>AI-POWERED</span><span class="g">|</span><span>2026</span><span class="g">|</span><span>VISION</span><span class="g">|</span><span>INTENT</span><span class="g">|</span><span>SPATIAL AI</span><span class="g">|</span><span>FOR A MORE INCLUSIVE WORLD</span><span class="g">|</span>
+    <span>BUILD</span><span class="g">|</span><span>SHAPE</span><span class="g">|</span><span>GREAT IDEAS</span><span class="g">|</span><span>DON'T NEED DESKS</span><span class="g">|</span><span>iQOO HACKATHON</span><span class="g">|</span><span>AI-POWERED</span><span class="g">|</span><span>2026</span><span class="g">|</span><span>VISION</span><span class="g">|</span><span>INTENT</span><span class="g">|</span><span>SPATIAL AI</span><span class="g">|</span><span>FOR A MORE INCLUSIVE WORLD</span><span class="g">|</span>
+  </div>
+</div>
+
 <!-- Nav -->
-<nav>
+<nav class="nav">
   <div class="container nav-inner">
     <div class="logo">
-      <div class="logo-dot">
-        <svg viewBox="0 0 100 100" fill="none"><circle cx="35" cy="42" r="8" fill="white"/><path d="M30 65 Q45 50 70 65" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
+      <div class="logo-mark">
+        <svg viewBox="0 0 100 100" fill="none"><path d="M24 60 Q50 34 76 60" stroke="#12161F" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="50" cy="44" r="6" fill="#12161F"/></svg>
       </div>
-      SIGHTLINE
+      <div>
+        SIGHTLINE
+        <small>VISION · INTENT · SPATIAL AI</small>
+      </div>
     </div>
     <div class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#how">How it works</a>
-      <a href="#tech">Tech</a>
-      <a href="#download" class="nav-cta">Try It</a>
+      <a href="#product">Product</a>
+      <a href="#modes">Modes</a>
+      <a href="#usecases">Use Cases</a>
+      <a href="#tech">Technology</a>
+      <a href="#team">Team</a>
+      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="nav-cta">Get the App</a>
     </div>
   </div>
 </nav>
 
 <!-- Hero -->
 <header class="hero">
-  <div class="container">
-    <div class="hero-badge">⚡ iQOO Hackathon — Open Innovation</div>
-    <h1>SIGHTLINE</h1>
-    <p class="tagline">"Don't just see. Understand."</p>
-    <p style="color: var(--muted); max-width: 640px; margin: 0 auto 36px;">
-      An on-device AI assistant for visually impaired users. It doesn't describe everything the camera
-      sees — it understands what you want to <strong style="color: var(--text);">do</strong> and speaks only what matters.
-    </p>
-    <div class="hero-actions">
-      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-primary">📲 Download APK</a>
-      <a href="https://github.com/akhilamalakota/sightline" class="btn btn-secondary">View Source</a>
+  <div class="container hero-grid">
+    <div>
+      <span class="kicker">AI for a more independent tomorrow</span>
+      <h1>SIGHT<span class="gold">LINE</span></h1>
+      <p class="sub">A phone-first AI assistant that turns visual scenes into short, actionable spoken guidance.</p>
+      <p class="desc">
+        Built for people with visual impairment. SIGHTLINE understands what you're trying to
+        <em>do</em> — finds what you need, and guides you through the world with clear, real-time
+        voice. 100% on-device. Private. Works offline.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-gold">Download the APK</a>
+        <a href="#product" class="btn btn-ink">How it works →</a>
+      </div>
+      <div class="hero-foot">
+        <div class="pill"><span class="ico">🎯</span><span><b>FIND</b><small>Objects in real space</small></span></div>
+        <div class="pill"><span class="ico">🧭</span><span><b>GUIDE</b><small>With spoken voice</small></span></div>
+        <div class="pill"><span class="ico">🗣️</span><span><b>WAKE WORD</b><small>Just say "Hey Sightline"</small></span></div>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div class="stat"><div class="stat-num">9</div><div class="stat-label">Voice Modes</div></div>
-      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Offline</div></div>
-      <div class="stat"><div class="stat-num">7</div><div class="stat-label">Banknotes Recognized</div></div>
-      <div class="stat"><div class="stat-num">80</div><div class="stat-label">Objects Detected</div></div>
+
+    <!-- Phone mockup -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="notch"></span>
+            <span>▮▮▮ ▮</span>
+          </div>
+          <div class="phone-screen-head">
+            <div class="app">SIGHTLINE</div>
+            <div class="mod">Spatial AI · Guide</div>
+          </div>
+          <div class="viewfinder">
+            <div class="obj">Chair</div>
+          </div>
+          <div class="tel-grid">
+            <div class="tel-row"><span class="k">Target</span><span class="v gold">Chair</span></div>
+            <div class="tel-row"><span class="k">Distance</span><span class="v">2.1 metres</span></div>
+            <div class="tel-row"><span class="k">Direction</span><span class="v">Slightly left · 15°</span></div>
+            <div class="tel-row"><span class="k">Path</span><span class="v" style="color:#7BC96F">Clear</span></div>
+          </div>
+          <div class="tel-cta">Move forward, then slightly left</div>
+          <div class="phone-nav">
+            <div><b>◎</b>Scan</div>
+            <div><b>◷</b>History</div>
+            <div><b>⌕</b>Ask</div>
+            <div><b>➤</b>Navigate</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </header>
 
-<!-- App Screenshot -->
-<section id="app">
+<!-- Pillars -->
+<div class="pillars">
+  <div class="container pillars-inner">
+    <div class="pillar">
+      <span class="n">01 · YOUR INTENT</span>
+      <h3>UNDERSTAND</h3>
+      <p>Listen to your voice, understand your intent, and focus on what matters.</p>
+    </div>
+    <div class="pillar">
+      <span class="n">02 · THE SCENE</span>
+      <h3>LOCATE</h3>
+      <p>Analyze the scene, identify the right object, and determine its real-world position.</p>
+    </div>
+    <div class="pillar">
+      <span class="n">03 · REACH</span>
+      <h3>GUIDE</h3>
+      <p>Give short, clear, spoken directions so you can act with confidence.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Problem -->
+<section class="problem" id="product">
   <div class="container">
-    <div class="section-title">See it in action</div>
-    <p class="section-sub">Real-time object detection with spatial guidance and voice output — all on your phone, no internet needed.</p>
-    <div class="mockup-wrap">
-      <div class="mockup">
-        <img src="https://raw.githubusercontent.com/akhilamalakota/sightline/master/screen.png" alt="SIGHTLINE app camera view with object detection overlay">
+    <div class="sec-head">
+      <span class="kicker">The Problem</span>
+      <h2 class="sec-title">Seeing isn't the problem.<br>Knowing what to <span class="gold">do</span> is.</h2>
+      <p>Most AI vision assistants describe what's in front of the camera. But visually impaired users don't need a list of objects — they need actionable spatial guidance.</p>
+    </div>
+    <div class="compare">
+      <div class="cmp-card no">
+        <div class="label">Most AI assistants answer</div>
+        <div class="quote">"I see a chair, table, bottle, person, plant and a door."</div>
+        <div class="cmp-tags"><span>Object lists</span><span>Not helpful</span><span>Context missing</span></div>
+      </div>
+      <div class="cmp-card yes">
+        <div class="label">What users actually need</div>
+        <div class="quote">"The chair is 2.1 metres ahead. Slightly left. Move forward."</div>
+        <div class="cmp-tags"><span>Actionable</span><span>Spatial context</span><span>Rare in AI</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Features -->
-<section id="features" style="background: var(--bg-2);">
+<!-- Insight -->
+<section>
+  <div class="container insight-grid">
+    <div>
+      <span class="kicker">The Insight</span>
+      <div class="insight-quote">
+        The real value isn't a description of the scene — it's an understanding of your
+        <em>intent</em> and actionable guidance to achieve it.
+      </div>
+    </div>
+    <div class="insight-boxes">
+      <div class="insight-box same">
+        <span class="tag">Same Scene</span>
+        <div>
+          <h4>Object-centric</h4>
+          <p>"What do you see?" — the camera sees the same scene. Traditional AI generates a list of objects.</p>
+        </div>
+      </div>
+      <div class="insight-box diff">
+        <span class="tag">Different Question</span>
+        <div>
+          <h4>Intent-centric — SIGHTLINE</h4>
+          <p>"What am I trying to do?" — detect, reason in space, then guide: "The chair is 2.1 metres ahead, slightly left."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Product flow -->
+<section style="background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
   <div class="container">
-    <div class="section-title">9 modes. One voice.</div>
-    <p class="section-sub">Every phrase below works hands-free. Just say it.</p>
-    <div class="features-grid">
-
-      <div class="feature">
-        <div class="feature-icon f1">🎯</div>
-        <h3>FIND</h3>
-        <p>Point the camera, ask where something is. Get direction + distance in plain words.</p>
-        <span class="trigger">"find a chair"</span>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon f2">🧭</div>
-        <h3>GUIDE</h3>
-        <p>Step-by-step spoken navigation toward a target, with obstacle warnings.</p>
-        <span class="trigger">"guide me to the exit"</span>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon f3">👀</div>
+    <div class="sec-head center">
+      <span class="kicker">The Product</span>
+      <h2 class="sec-title">One phone. Your vision. <span class="gold">Our guidance.</span></h2>
+    </div>
+    <div class="flow">
+      <div class="flow-step">
+        <span class="big">01</span>
+        <div class="ic">👂</div>
         <h3>UNDERSTAND</h3>
+        <span class="q">What are you trying to do?</span>
+        <p>Listen to your voice, understand your intent, and focus on exactly what matters.</p>
+      </div>
+      <div class="flow-step">
+        <span class="big">02</span>
+        <div class="ic">📍</div>
+        <h3>LOCATE</h3>
+        <span class="q">Where is the target?</span>
+        <p>Analyze the scene, identify the right object, and determine its real-world position and distance.</p>
+      </div>
+      <div class="flow-step">
+        <span class="big">03</span>
+        <div class="ic">🎙️</div>
+        <h3>GUIDE</h3>
+        <span class="q">What should you do next?</span>
+        <p>Give short, clear, spoken directions so you can take action confidently.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Modes -->
+<section class="modes" id="modes">
+  <div class="container">
+    <div class="sec-head center">
+      <span class="kicker">Capabilities</span>
+      <h2 class="sec-title">Nine ways to <span class="gold">understand</span> your world</h2>
+      <p>Every phrase works hands-free — just say it out loud.</p>
+    </div>
+    <div class="modes-grid">
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">01</span><h3>FIND</h3><span class="m-ic">🎯</span></div>
+        <p>Point the camera and ask where something is. Get direction and distance in plain words.</p>
+        <span class="trigger">"Find a chair"</span>
+      </div>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">02</span><h3>GUIDE</h3><span class="m-ic">🧭</span></div>
+        <p>Step-by-step spoken navigation toward a target, with obstacle warnings along the way.</p>
+        <span class="trigger">"Guide me to the exit"</span>
+      </div>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">03</span><h3>UNDERSTAND</h3><span class="m-ic">👀</span></div>
         <p>A calm summary of what's around you — objects, positions, anything in your path.</p>
-        <span class="trigger">"what's around me?"</span>
+        <span class="trigger">"What's around me?"</span>
       </div>
-
-      <div class="feature">
-        <div class="feature-icon f4">🧠</div>
-        <h3>REMEMBER</h3>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">04</span><h3>REMEMBER</h3><span class="m-ic">🧠</span></div>
         <p>Tell it where you put things. It remembers — and recalls them later.</p>
-        <span class="trigger">"remember where I put my phone"</span>
+        <span class="trigger">"Remember where I put my phone"</span>
       </div>
-
-      <div class="feature">
-        <div class="feature-icon f5">📖</div>
-        <h3>READ</h3>
-        <p>Offline OCR reads signs, menus, labels, papers — out loud.</p>
-        <span class="trigger">"read this"</span>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">05</span><h3>READ</h3><span class="m-ic">📖</span></div>
+        <p>Offline OCR reads signs, menus, labels and papers — out loud.</p>
+        <span class="trigger">"Read this"</span>
       </div>
-
-      <div class="feature">
-        <div class="feature-icon f6">💵</div>
-        <h3>MONEY</h3>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">06</span><h3>MONEY</h3><span class="m-ic">💵</span></div>
         <p>Recognizes Indian banknotes — ₹10, ₹20, ₹50, ₹100, ₹200, ₹500, ₹2000.</p>
-        <span class="trigger">"how much is this?"</span>
+        <span class="trigger">"How much is this?"</span>
       </div>
-
-      <div class="feature">
-        <div class="feature-icon f7">🏷️</div>
-        <h3>BARCODE</h3>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">07</span><h3>BARCODE</h3><span class="m-ic">🏷️</span></div>
         <p>Scans QR codes and product barcodes; speaks the format and value.</p>
-        <span class="trigger">"scan this"</span>
+        <span class="trigger">"Scan this"</span>
       </div>
-
-      <div class="feature">
-        <div class="feature-icon f8">🎨</div>
-        <h3>COLOR & LIGHT</h3>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">08</span><h3>COLOR &amp; LIGHT</h3><span class="m-ic">🎨</span></div>
         <p>Answers both questions in one look: what color, and is it bright or dark.</p>
-        <span class="trigger">"what color is this?"</span>
+        <span class="trigger">"What color is this?"</span>
       </div>
-
-      <div class="feature">
-        <div class="feature-icon f9">🗣️</div>
-        <h3>WAKE WORD</h3>
-        <p>Just say <em>"Hey Sightline"</em> — the phone buzzes, wakes, and starts listening. 100% offline (Vosk).</p>
-        <span class="trigger">"hey sightline"</span>
+      <div class="mode-card">
+        <div class="m-head"><span class="m-num">09</span><h3>WAKE WORD</h3><span class="m-ic">🗣️</span></div>
+        <p>Just say "Hey Sightline" — the phone buzzes, wakes, and starts listening. Fully offline.</p>
+        <span class="trigger">"Hey Sightline"</span>
       </div>
+    </div>
+  </div>
+</section>
 
+<!-- Use cases -->
+<section id="usecases">
+  <div class="container">
+    <div class="sec-head center">
+      <span class="kicker">Real-World Use Cases</span>
+      <h2 class="sec-title">Same places. <span class="gold">More freedom.</span></h2>
+      <p>From everyday tasks to unfamiliar spaces — one step at a time.</p>
+    </div>
+    <div class="uc-grid">
+      <div class="uc-card">
+        <div class="uc-vis">
+          <span class="uc-num">01 · FIND</span>
+          <span class="uc-obj">🚰 Everyday Objects</span>
+          <span class="uc-dist">Water bottle · 0.4 m</span>
+          <div class="uc-arrow">↓</div>
+        </div>
+        <div class="uc-body">
+          <span class="ask">"Where's my water bottle?"</span>
+          <span class="resp">"On the table, <b>40 centimetres</b>, slightly left."</span>
+        </div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-vis">
+          <span class="uc-num">02 · NAVIGATE</span>
+          <span class="uc-obj">🚪 Move with Confidence</span>
+          <span class="uc-dist">Door · 3.0 m</span>
+          <div class="uc-arrow">↓</div>
+        </div>
+        <div class="uc-body">
+          <span class="ask">"Find the door."</span>
+          <span class="resp">"Door ahead, <b>to your right</b>. Three metres."</span>
+        </div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-vis">
+          <span class="uc-num">03 · ACT</span>
+          <span class="uc-obj">🪑 Interact in Spaces</span>
+          <span class="uc-dist">Empty seat · 1.5 m</span>
+          <div class="uc-arrow">↓</div>
+        </div>
+        <div class="uc-body">
+          <span class="ask">"Help me find a free seat."</span>
+          <span class="resp">"One empty chair ahead, <b>1.5 metres</b>, slightly right."</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- How it works -->
-<section id="how">
-  <div class="container">
-    <div class="section-title">How it works</div>
-    <p class="section-sub">Six steps, end to end, all on-device.</p>
-    <div class="pipeline">
-      <div class="pipe-step">
-        <div class="pipe-num">1</div>
-        <div class="pipe-body"><h4>Camera → Detection</h4><p>CameraX delivers frames to TFLite YOLOv8n — object, currency, barcode, color in parallel pipelines.</p></div>
+<section style="background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="container hiw">
+    <div class="hiw-side">
+      <span class="kicker">The Engine</span>
+      <div class="h-slug">From intent to independence.</div>
+      <p style="color: var(--ink-3); font-size: 0.95rem; margin-top: 14px;">
+        SIGHTLINE combines voice, vision and spatial AI to understand your intent, interpret the
+        real world, and give short, actionable spoken guidance.
+      </p>
+      <div class="h-badge">
+        <span>Real-time response</span>
+        <span>On-device, privacy first</span>
+        <span>Works offline</span>
       </div>
-      <div class="pipe-line"></div>
-      <div class="pipe-step">
-        <div class="pipe-num">2</div>
-        <div class="pipe-body"><h4>Detections → World Model</h4><p>SpatialEngine stabilizes tracks and maps every object to direction, distance (meters), and approach state.</p></div>
+    </div>
+    <div class="hiw-steps">
+      <div class="hiw-step">
+        <div class="d">1</div>
+        <div>
+          <h4>Understand intent</h4>
+          <p>Voice processing transcribes your command and understands what you're trying to do.</p>
+          <span class="io">"Find the chair near me" → Intent: Find · Target: Chair</span>
+        </div>
       </div>
-      <div class="pipe-line"></div>
-      <div class="pipe-step">
-        <div class="pipe-num">3</div>
-        <div class="pipe-body"><h4>Voice → Goal</h4><p>GoalParser matches your phrase to an intent — no LLM, no network, zero hallucination.</p></div>
+      <div class="hiw-step">
+        <div class="d">2</div>
+        <div>
+          <h4>See the scene</h4>
+          <p>Camera frames run through object detection to detect and map everything in view.</p>
+          <span class="io">Detect &amp; map objects in the scene</span>
+        </div>
       </div>
-      <div class="pipe-line"></div>
-      <div class="pipe-step">
-        <div class="pipe-num">4</div>
-        <div class="pipe-body"><h4>Goal + World → Response</h4><p>ResponseBuilder picks the right template: count, direction, distance — spoken naturally.</p></div>
+      <div class="hiw-step">
+        <div class="d">3</div>
+        <div>
+          <h4>Reason in space</h4>
+          <p>Spatial AI estimates distance, direction and a safe path — in real time.</p>
+          <span class="io">Distance: 2.1 m · Direction: slightly left · Path: clear</span>
+        </div>
       </div>
-      <div class="pipe-line"></div>
-      <div class="pipe-step">
-        <div class="pipe-num">5</div>
-        <div class="pipe-body"><h4>Response → Speech</h4><p>Native Text-to-Speech reads it out at a comfortable pace.</p></div>
-      </div>
-      <div class="pipe-line"></div>
-      <div class="pipe-step">
-        <div class="pipe-num">6</div>
-        <div class="pipe-body"><h4>Telemetry → Dashboard</h4><p>Optional local WebSocket streams the world model to a live Command Center.</p></div>
+      <div class="hiw-step">
+        <div class="d">4</div>
+        <div>
+          <h4>Guide with voice</h4>
+          <p>Results become short, natural spoken directions. Speak and guide in real time.</p>
+          <span class="io">"The chair is 2.1 metres ahead. Slightly left. Move forward."</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Tech -->
-<section id="tech" style="background: var(--bg-2);">
+<!-- Technology -->
+<section class="tech" id="tech">
   <div class="container">
-    <div class="section-title">Built with</div>
-    <p class="section-sub">Everything runs on-device. No servers, no API keys, no subscriptions — it works anywhere, even offline.</p>
-    <div class="tech">
-      <span class="tech-chip">Kotlin</span>
-      <span class="tech-chip">Jetpack Compose</span>
-      <span class="tech-chip">CameraX</span>
-      <span class="tech-chip">TensorFlow Lite</span>
-      <span class="tech-chip">YOLOv8n</span>
-      <span class="tech-chip">ML Kit OCR</span>
-      <span class="tech-chip">ML Kit Barcode</span>
-      <span class="tech-chip">Vosk (offline STT)</span>
-      <span class="tech-chip">Android DataStore</span>
-      <span class="tech-chip">Node.js + React</span>
-      <span class="tech-chip">WebSocket</span>
+    <div class="sec-head center">
+      <span class="kicker">Technology</span>
+      <h2 class="sec-title">Powerful AI. On your phone. <span class="gold">In real time.</span></h2>
+      <p>SIGHTLINE combines state-of-the-art AI models with on-device processing — fast, private, reliable. Anywhere, anytime.</p>
+    </div>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="t-ic">👁️</div>
+        <h4>Computer Vision</h4>
+        <p>Detects and understands real-world objects.</p>
+        <span class="eg">YOLOv8n · TFLite</span>
+      </div>
+      <div class="tech-card">
+        <div class="t-ic">💬</div>
+        <h4>Goal Understanding</h4>
+        <p>Understands your intent and scene context.</p>
+        <span class="eg">Intent parsing · on-device</span>
+      </div>
+      <div class="tech-card">
+        <div class="t-ic">📐</div>
+        <h4>Spatial Intelligence</h4>
+        <p>Estimates distance, direction and safe paths.</p>
+        <span class="eg">Monocular depth + tracking</span>
+      </div>
+      <div class="tech-card">
+        <div class="t-ic">🎙️</div>
+        <h4>Speech</h4>
+        <p>Natural, conversational voice guidance.</p>
+        <span class="eg">STT + TTS · on-device</span>
+      </div>
+    </div>
+    <div class="tech-strip">
+      <span>Fast</span>
+      <span>Private</span>
+      <span>Reliable</span>
+      <span>Real-time response</span>
+      <span>On-device processing</span>
+      <span>Works offline</span>
     </div>
   </div>
 </section>
 
-<!-- Download CTA -->
-<section id="download">
+<!-- Download -->
+<section class="download">
   <div class="container">
-    <div class="cta">
-      <h2>Try SIGHTLINE on your phone</h2>
-      <p>Download the APK, install it, and hear what it sees. Free forever — built for the iQOO Hackathon.</p>
-      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-primary" style="font-size: 1.1rem; padding: 16px 40px;">📲 Download Sightline.apk</a>
-      <div class="dl-steps">
-        <div class="dl-step"><span class="n">1.</span><p>Download the APK (90 MB)</p></div>
-        <div class="dl-step"><span class="n">2.</span><p>Allow "Install from unknown sources"</p></div>
-        <div class="dl-step"><span class="n">3.</span><p>Grant Camera + Microphone, then say <em>"Hey Sightline"</em></p></div>
+    <h2>Try SIGHTLINE <span class="gold">on your phone</span></h2>
+    <p>Download the APK, install it, and hear what it sees. Free forever — built for the iQOO Hackathon 2026.</p>
+    <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-gold btn-gold-lg">📲 Download Sightline.apk</a>
+    <div class="dl-steps">
+      <div class="dl-step"><span class="n">1.</span><p>Download the APK (90 MB)</p></div>
+      <div class="dl-step"><span class="n">2.</span><p>Allow "Install from unknown sources"</p></div>
+      <div class="dl-step"><span class="n">3.</span><p>Grant Camera &amp; Microphone, then say <em>"Hey Sightline"</em></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Team -->
+<section id="team">
+  <div class="container">
+    <div class="sec-head center">
+      <span class="kicker">For the Builders, By the Builders</span>
+      <h2 class="sec-title">Same minds. <span class="gold">Greater impact.</span></h2>
+    </div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar">AK</div>
+        <div>
+          <h3>Akhil</h3>
+          <span class="role">Founder &amp; Developer</span>
+          <p>Turning ideas into real-world impact with technology.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">RM</div>
+        <div>
+          <h3>Ramya</h3>
+          <span class="role">Designer &amp; Researcher</span>
+          <p>Designing for people, researching for real change.</p>
+        </div>
       </div>
     </div>
+    <p class="team-motto">Building a more inclusive tomorrow — <em>ideas without limits.</em></p>
   </div>
 </section>
 
 <!-- Footer -->
 <footer>
-  <div class="container">
-    <p style="margin-bottom: 8px;"><strong>SIGHTLINE</strong> — Don't just see. Understand.</p>
-    <p>Built for the <a href="https://www.iqoo.com/in/">iQOO</a> Hackathon — Open Innovation &nbsp;·&nbsp; <a href="https://github.com/akhilamalakota/sightline">GitHub</a> &nbsp;·&nbsp; <a href="https://github.com/akhilamalakota/sightline/releases">Releases</a></p>
+  <div class="container foot-inner">
+    <div class="foot-tag">
+      People <span class="g">|</span> Technology <span class="g">|</span> A More Inclusive World
+    </div>
+    <div class="foot-brand">SIGHT<span class="gold">LINE</span></div>
+    <div class="foot-tag">iQOO Hackathon 2026 · AI-Powered <span class="g">·</span> Open Innovation</div>
   </div>
 </footer>
 
