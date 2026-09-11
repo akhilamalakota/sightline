@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGHTLINE — Don't Just See. Understand.</title>
+<meta name="description" content="SIGHTLINE — an AI assistant for visually impaired users. 100% offline. Speaks what matters, not everything it sees.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%232196F3'/><circle cx='35' cy='42' r='8' fill='white'/><path d='M30 65 Q45 50 70 65' stroke='white' stroke-width='6' fill='none' stroke-linecap='round'/></svg>">
+<style>
+:root {
+  --bg: #0a0e17;
+  --bg-2: #0f1522;
+  --card: #131a2b;
+  --border: #1e2a41;
+  --text: #e8eef7;
+  --muted: #8b97ad;
+  --accent: #2196F3;
+  --accent-2: #00E5FF;
+  --success: #4CAF50;
+  --radius: 16px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- Nav ---------- */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px; }
+.logo-dot { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; }
+.logo-dot svg { width: 18px; height: 18px; }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: var(--accent); color: white !important; padding: 8px 18px;
+  border-radius: 8px; font-weight: 600;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  padding: 110px 0 90px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% -10%, rgba(33, 150, 243, 0.22), transparent),
+    radial-gradient(ellipse 40% 40% at 85% 20%, rgba(0, 229, 255, 0.08), transparent);
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  padding: 6px 16px; border-radius: 100px;
+  font-size: 0.8rem; color: var(--accent-2); margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-weight: 800; letter-spacing: 2px; margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--text) 30%, var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .tagline { font-size: clamp(1.1rem, 2.5vw, 1.5rem); color: var(--muted); max-width: 700px; margin: 0 auto 36px; font-style: italic; }
+.hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 32px; border-radius: 12px;
+  font-size: 1rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  border: none; transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), #1976D2); color: white; box-shadow: 0 8px 24px rgba(33, 150, 243, 0.35); }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); }
+.hero-stats { display: flex; gap: 48px; justify-content: center; margin-top: 60px; flex-wrap: wrap; }
+.stat { text-align: center; }
+.stat-num { font-size: 2rem; font-weight: 800; color: var(--accent-2); }
+.stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+/* ---------- Sections ---------- */
+section { padding: 80px 0; }
+.section-title { text-align: center; font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700; margin-bottom: 12px; }
+.section-sub { text-align: center; color: var(--muted); max-width: 640px; margin: 0 auto 56px; }
+
+/* ---------- Screenshot ---------- */
+.mockup-wrap { display: grid; place-items: center; }
+.mockup {
+  max-width: 320px; width: 100%;
+  border-radius: 36px; border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden; background: black;
+}
+.mockup img { width: 100%; display: block; }
+
+/* ---------- Features ---------- */
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.feature {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.feature:hover { border-color: var(--accent); transform: translateY(-3px); }
+.feature-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 16px; font-size: 1.3rem; }
+.feature h3 { font-size: 1.1rem; margin-bottom: 8px; }
+.feature p { color: var(--muted); font-size: 0.9rem; }
+.feature .trigger { display: inline-block; margin-top: 12px; font-size: 0.75rem; color: var(--accent-2); background: rgba(0, 229, 255, 0.08); padding: 3px 10px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, monospace; }
+
+.f1 { background: rgba(33, 150, 243, 0.12); } .f2 { background: rgba(76, 175, 80, 0.12); }
+.f3 { background: rgba(255, 152, 0, 0.12); } .f4 { background: rgba(156, 39, 176, 0.12); }
+.f5 { background: rgba(0, 229, 255, 0.12); } .f6 { background: rgba(244, 67, 54, 0.12); }
+.f7 { background: rgba(255, 235, 59, 0.12); } .f8 { background: rgba(233, 30, 99, 0.12); }
+.f9 { background: rgba(63, 81, 181, 0.12); }
+
+/* ---------- Tech ---------- */
+.tech { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.tech-chip {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 10px 20px; border-radius: 100px; font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+.tech-chip:hover { border-color: var(--accent-2); }
+
+/* ---------- How it works ---------- */
+.pipeline { display: flex; flex-direction: column; gap: 0; max-width: 700px; margin: 0 auto; }
+.pipe-step { display: flex; gap: 20px; align-items: flex-start; }
+.pipe-num {
+  min-width: 40px; height: 40px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--accent);
+  display: grid; place-items: center; font-weight: 700; color: var(--accent-2);
+}
+.pipe-line { width: 1px; height: 32px; background: var(--border); margin-left: 19.5px; }
+.pipe-body { padding-top: 8px; }
+.pipe-body h4 { font-size: 1rem; margin-bottom: 4px; }
+.pipe-body p { color: var(--muted); font-size: 0.9rem; }
+
+/* ---------- Download CTA ---------- */
+.cta {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 24px; padding: 56px 40px; text-align: center;
+}
+.cta h2 { font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 12px; }
+.cta p { color: var(--muted); max-width: 520px; margin: 0 auto 32px; }
+.dl-steps { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; margin-top: 40px; text-align: left; }
+.dl-step { max-width: 260px; }
+.dl-step .n { color: var(--accent-2); font-weight: 800; font-size: 1.2rem; }
+.dl-step p { margin-top: 4px; font-size: 0.85rem; }
+
+/* ---------- Footer ---------- */
+footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; }
+footer p { color: var(--muted); font-size: 0.85rem; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+  .nav-links a:not(.nav-cta) { display: none; }
+  .hero { padding: 70px 0 60px; }
+  section { padding: 56px 0; }
+  .hero-stats { gap: 28px; }
+  .dl-steps { gap: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container nav-inner">
+    <div class="logo">
+      <div class="logo-dot">
+        <svg viewBox="0 0 100 100" fill="none"><circle cx="35" cy="42" r="8" fill="white"/><path d="M30 65 Q45 50 70 65" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      SIGHTLINE
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#tech">Tech</a>
+      <a href="#download" class="nav-cta">Try It</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-badge">⚡ iQOO Hackathon — Open Innovation</div>
+    <h1>SIGHTLINE</h1>
+    <p class="tagline">"Don't just see. Understand."</p>
+    <p style="color: var(--muted); max-width: 640px; margin: 0 auto 36px;">
+      An on-device AI assistant for visually impaired users. It doesn't describe everything the camera
+      sees — it understands what you want to <strong style="color: var(--text);">do</strong> and speaks only what matters.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-primary">📲 Download APK</a>
+      <a href="https://github.com/akhilamalakota/sightline" class="btn btn-secondary">View Source</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">9</div><div class="stat-label">Voice Modes</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Offline</div></div>
+      <div class="stat"><div class="stat-num">7</div><div class="stat-label">Banknotes Recognized</div></div>
+      <div class="stat"><div class="stat-num">80</div><div class="stat-label">Objects Detected</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- App Screenshot -->
+<section id="app">
+  <div class="container">
+    <div class="section-title">See it in action</div>
+    <p class="section-sub">Real-time object detection with spatial guidance and voice output — all on your phone, no internet needed.</p>
+    <div class="mockup-wrap">
+      <div class="mockup">
+        <img src="https://raw.githubusercontent.com/akhilamalakota/sightline/master/screen.png" alt="SIGHTLINE app camera view with object detection overlay">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features" style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-title">9 modes. One voice.</div>
+    <p class="section-sub">Every phrase below works hands-free. Just say it.</p>
+    <div class="features-grid">
+
+      <div class="feature">
+        <div class="feature-icon f1">🎯</div>
+        <h3>FIND</h3>
+        <p>Point the camera, ask where something is. Get direction + distance in plain words.</p>
+        <span class="trigger">"find a chair"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f2">🧭</div>
+        <h3>GUIDE</h3>
+        <p>Step-by-step spoken navigation toward a target, with obstacle warnings.</p>
+        <span class="trigger">"guide me to the exit"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f3">👀</div>
+        <h3>UNDERSTAND</h3>
+        <p>A calm summary of what's around you — objects, positions, anything in your path.</p>
+        <span class="trigger">"what's around me?"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f4">🧠</div>
+        <h3>REMEMBER</h3>
+        <p>Tell it where you put things. It remembers — and recalls them later.</p>
+        <span class="trigger">"remember where I put my phone"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f5">📖</div>
+        <h3>READ</h3>
+        <p>Offline OCR reads signs, menus, labels, papers — out loud.</p>
+        <span class="trigger">"read this"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f6">💵</div>
+        <h3>MONEY</h3>
+        <p>Recognizes Indian banknotes — ₹10, ₹20, ₹50, ₹100, ₹200, ₹500, ₹2000.</p>
+        <span class="trigger">"how much is this?"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f7">🏷️</div>
+        <h3>BARCODE</h3>
+        <p>Scans QR codes and product barcodes; speaks the format and value.</p>
+        <span class="trigger">"scan this"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f8">🎨</div>
+        <h3>COLOR & LIGHT</h3>
+        <p>Answers both questions in one look: what color, and is it bright or dark.</p>
+        <span class="trigger">"what color is this?"</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon f9">🗣️</div>
+        <h3>WAKE WORD</h3>
+        <p>Just say <em>"Hey Sightline"</em> — the phone buzzes, wakes, and starts listening. 100% offline (Vosk).</p>
+        <span class="trigger">"hey sightline"</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how">
+  <div class="container">
+    <div class="section-title">How it works</div>
+    <p class="section-sub">Six steps, end to end, all on-device.</p>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-num">1</div>
+        <div class="pipe-body"><h4>Camera → Detection</h4><p>CameraX delivers frames to TFLite YOLOv8n — object, currency, barcode, color in parallel pipelines.</p></div>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-num">2</div>
+        <div class="pipe-body"><h4>Detections → World Model</h4><p>SpatialEngine stabilizes tracks and maps every object to direction, distance (meters), and approach state.</p></div>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-num">3</div>
+        <div class="pipe-body"><h4>Voice → Goal</h4><p>GoalParser matches your phrase to an intent — no LLM, no network, zero hallucination.</p></div>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-num">4</div>
+        <div class="pipe-body"><h4>Goal + World → Response</h4><p>ResponseBuilder picks the right template: count, direction, distance — spoken naturally.</p></div>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-num">5</div>
+        <div class="pipe-body"><h4>Response → Speech</h4><p>Native Text-to-Speech reads it out at a comfortable pace.</p></div>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-num">6</div>
+        <div class="pipe-body"><h4>Telemetry → Dashboard</h4><p>Optional local WebSocket streams the world model to a live Command Center.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tech -->
+<section id="tech" style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-title">Built with</div>
+    <p class="section-sub">Everything runs on-device. No servers, no API keys, no subscriptions — it works anywhere, even offline.</p>
+    <div class="tech">
+      <span class="tech-chip">Kotlin</span>
+      <span class="tech-chip">Jetpack Compose</span>
+      <span class="tech-chip">CameraX</span>
+      <span class="tech-chip">TensorFlow Lite</span>
+      <span class="tech-chip">YOLOv8n</span>
+      <span class="tech-chip">ML Kit OCR</span>
+      <span class="tech-chip">ML Kit Barcode</span>
+      <span class="tech-chip">Vosk (offline STT)</span>
+      <span class="tech-chip">Android DataStore</span>
+      <span class="tech-chip">Node.js + React</span>
+      <span class="tech-chip">WebSocket</span>
+    </div>
+  </div>
+</section>
+
+<!-- Download CTA -->
+<section id="download">
+  <div class="container">
+    <div class="cta">
+      <h2>Try SIGHTLINE on your phone</h2>
+      <p>Download the APK, install it, and hear what it sees. Free forever — built for the iQOO Hackathon.</p>
+      <a href="https://github.com/akhilamalakota/sightline/releases/download/v1.0-freebuff/Sightline.apk" class="btn btn-primary" style="font-size: 1.1rem; padding: 16px 40px;">📲 Download Sightline.apk</a>
+      <div class="dl-steps">
+        <div class="dl-step"><span class="n">1.</span><p>Download the APK (90 MB)</p></div>
+        <div class="dl-step"><span class="n">2.</span><p>Allow "Install from unknown sources"</p></div>
+        <div class="dl-step"><span class="n">3.</span><p>Grant Camera + Microphone, then say <em>"Hey Sightline"</em></p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <p style="margin-bottom: 8px;"><strong>SIGHTLINE</strong> — Don't just see. Understand.</p>
+    <p>Built for the <a href="https://www.iqoo.com/in/">iQOO</a> Hackathon — Open Innovation &nbsp;·&nbsp; <a href="https://github.com/akhilamalakota/sightline">GitHub</a> &nbsp;·&nbsp; <a href="https://github.com/akhilamalakota/sightline/releases">Releases</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
