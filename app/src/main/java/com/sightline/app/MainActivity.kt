@@ -37,6 +37,8 @@ class MainActivity : ComponentActivity() {
     // Shared with the compose tree: onStart/onStop set app visibility.
     private val vm: SightlineViewModel by viewModels()
 
+    private var debugCommand: String? = null
+
     private val requiredPermissions: Array<String> by lazy {
         buildList {
             add(Manifest.permission.CAMERA)
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "==================== onCreate START ====================")
+        debugCommand = intent.getStringExtra("cmd")
 
         // Request missing permissions
         val missing = requiredPermissions.filter {
@@ -114,6 +117,13 @@ class MainActivity : ComponentActivity() {
                         Log.i(TAG, "==================== ALL INIT DONE ====================")
                         Toast.makeText(app, "🚀 Hands-free mode on", Toast.LENGTH_LONG).show()
                         // Greeting + auto-listen are handled by the ViewModel's initVoice.
+
+                        // ADB test hook: adb shell am start ... --es cmd "find a chair"
+                        debugCommand?.let { cmd ->
+                            debugCommand = null
+                            Log.i(TAG, "Injecting debug command: '$cmd'")
+                            vm.processTextCommand(cmd)
+                        }
                     }
 
                     if (ready) {
@@ -130,6 +140,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDebugCommand(intent)
+    }
+
+    private fun handleDebugCommand(intent: Intent) {
+        val cmd = intent.getStringExtra("cmd") ?: return
+        intent.removeExtra("cmd")
+        Log.i(TAG, "Injecting debug command (onNewIntent): '$cmd'")
+        vm.processTextCommand(cmd)
     }
 
     override fun onStart() {

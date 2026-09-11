@@ -11,6 +11,9 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.sightline.app.*
 import com.sightline.app.camera.FrameConverter
+import com.sightline.app.detection.BarcodeReader
+import com.sightline.app.detection.ColorLightDetector
+import com.sightline.app.detection.MoneyDetector
 import com.sightline.app.detection.ObjectDetector
 import com.sightline.app.detection.TrafficLightClassifier
 import com.sightline.app.goal.GoalParser
@@ -66,6 +69,13 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
 
+    // --- One-shot special modes (COLOR / BARCODE / MONEY) ---
+    @Volatile private var colorFired = false
+    @Volatile private var barcodeFired = false
+    @Volatile private var moneyFired = false
+    private val barcodeReader by lazy { BarcodeReader(getApplication()) }
+    private val moneyDetector = MoneyDetector(getApplication())
+
     // --- Haptic locating ---
     private var lastLocateHapticMs = 0L
 
@@ -106,11 +116,14 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
 
     // --- Camera Frame Processing ---
     private var lastFrameTimeMs = 0L
-    private val frameIntervalMs = 200L
 
     fun onCameraFrame(imageProxy: androidx.camera.core.ImageProxy) {
         val now = System.currentTimeMillis()
-        if (now - lastFrameTimeMs < frameIntervalMs) {
+        // Battery throttle: idle scenes don't need 5Hz inference — 1Hz keeps
+        // wake responsiveness without burning the battery. Active goals (find,
+        // guide, scan, count money) need the full rate.
+        val desiredInterval = if (_uiState.value.phase == GoalMode.IDLE) 1000L else 200L
+        if (now - lastFrameTimeMs < desiredInterval) {
             imageProxy.close()
             return
         }
@@ -154,13 +167,31 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
 
             val state = _uiState.value
 
-            var bitmapOwnedByOcr = false
-            if (state.phase == GoalMode.READ && !ocrFired) {
-                ocrFired = true
-                bitmapOwnedByOcr = true
-                runOcr(bitmap)
+            // One-shot special modes own the bitmap for async processing.
+            var bitmapOwnedByMode = false
+            when {
+                state.phase == GoalMode.READ && !ocrFired -> {
+                    ocrFired = true
+                    bitmapOwnedByMode = true
+                    runOcr(bitmap)
+                }
+                state.phase == GoalMode.COLOR && !colorFired -> {
+                    colorFired = true
+                    bitmapOwnedByMode = true
+                    runColorDetect(bitmap)
+                }
+                state.phase == GoalMode.BARCODE && !barcodeFired -> {
+                    barcodeFired = true
+                    bitmapOwnedByMode = true
+                    runBarcode(bitmap)
+                }
+                state.phase == GoalMode.MONEY && !moneyFired -> {
+                    moneyFired = true
+                    bitmapOwnedByMode = true
+                    runMoney(bitmap)
+                }
             }
-            if (!bitmapOwnedByOcr) bitmap.recycle()
+            if (!bitmapOwnedByMode) bitmap.recycle()
 
             // Process active goal
             if (state.phase != GoalMode.IDLE && state.currentGoal != null) {
@@ -214,6 +245,9 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             GoalMode.UNDERSTAND -> responseBuilder.buildUnderstandResponse(world)
             GoalMode.REMEMBER -> responseBuilder.buildNoDetectionResponse()
             GoalMode.READ -> return
+            GoalMode.MONEY -> return
+            GoalMode.BARCODE -> return
+            GoalMode.COLOR -> return
             GoalMode.IDLE -> return
         }
 
@@ -250,7 +284,12 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
 
     suspend fun initDetectorSync(): Boolean {
         return try {
-            val success = withContext(Dispatchers.IO) { detector.init() }
+            val success = withContext(Dispatchers.IO) {
+                val objectOk = detector.init()
+                val moneyOk = moneyDetector.init()
+                Log.i(TAG, "Money detector init: $moneyOk")
+                objectOk
+            }
             Log.i(TAG, "Detector init: $success")
             withContext(Dispatchers.Main) {
                 Toast.makeText(getApplication(), "Detector: $success", Toast.LENGTH_SHORT).show()
@@ -271,7 +310,7 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             }
             voice.initTts {
                 Log.i(TAG, "TTS ready, speaking greeting")
-                voice.speak("Sightline is ready. Say what you need. For example, say find a chair, or, what is around me.")
+                voice.speak("Sightline is ready. Say what you need. For example, find a chair, what is around me, read this, how much is this, what color is this, or scan this.")
                 viewModelScope.launch {
                     var startedMs = 0L
                     while (!voice.isSpeaking.value && startedMs < 3000) { delay(150); startedMs += 150 }
@@ -297,9 +336,12 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         val goal = goalParser.parse(transcript)
 
         if (goal == null) {
+            // Global controls only ever run when the goal parser found nothing,
+            // so "stop sign" targets and "help me get to X" navigation win.
+            if (handleControlCommand(transcript)) return
             Log.w(TAG, "Could not parse goal from: '$transcript'")
             speakAndDisplay(SpokenResponse(
-                text = "I didn't understand. Try: find a chair, or, what's around me."
+                text = "I didn't understand. Try: find a chair, what's around me, what color is this, or how much is this."
             ))
             autoRelisten()
             return
@@ -313,7 +355,13 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
         lastSpokenZone = null
         lastArrivalAnnounceMs = 0L
         lastApproachAnnounceMs.clear()
-        if (goal.mode == GoalMode.READ) ocrFired = false
+        when (goal.mode) {
+            GoalMode.READ -> ocrFired = false
+            GoalMode.COLOR -> colorFired = false
+            GoalMode.BARCODE -> barcodeFired = false
+            GoalMode.MONEY -> moneyFired = false
+            else -> {}
+        }
 
         _uiState.value = _uiState.value.copy(
             currentGoal = goal,
@@ -324,6 +372,9 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
                 GoalMode.UNDERSTAND -> "SCANNING"
                 GoalMode.REMEMBER -> "REMEMBERING: ${goal.target.uppercase()}"
                 GoalMode.READ -> "READING TEXT"
+                GoalMode.MONEY -> "CHECKING MONEY"
+                GoalMode.BARCODE -> "SCANNING CODE"
+                GoalMode.COLOR -> "CHECKING COLOR"
                 GoalMode.IDLE -> "What do you need?"
             }
         )
@@ -338,11 +389,65 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             GoalMode.GUIDE -> "Guiding you to ${goal.target}."
             GoalMode.UNDERSTAND -> "Scanning your surroundings."
             GoalMode.READ -> "Reading what's in front of you."
+            GoalMode.MONEY -> "Checking the notes."
+            GoalMode.BARCODE -> "Scanning for a barcode."
+            GoalMode.COLOR -> "Checking the color."
             else -> ""
         }
         if (confirmText.isNotEmpty()) {
             speakAndDisplay(SpokenResponse(confirmText))
         }
+    }
+
+    /**
+     * Global voice controls — Stop / Repeat / Help. Only consulted when goal
+     * parsing failed, so real goals ("stop sign", "help me get to X") are never
+     * shadowed by a control word hiding inside them.
+     *
+     * Help is additionally gated to short utterances: a bare "help" or
+     * "what can you do" (<= 5 words) — never mid-sentence requests.
+     */
+    private fun handleControlCommand(transcript: String): Boolean {
+        val t = transcript.lowercase().trim()
+
+        val stopWords = listOf("stop", "cancel", "abort", "never mind", "nevermind", "be quiet", "quiet down")
+        if (stopWords.any { it in t }) {
+            Log.i(TAG, "CONTROL: stop")
+            returnToIdle()
+            speakAndDisplay(SpokenResponse("Stopped."))
+            return true
+        }
+
+        val repeatWords = listOf("repeat", "say that again", "say it again", "what did you say", "again")
+        if (repeatWords.any { it in t }) {
+            Log.i(TAG, "CONTROL: repeat")
+            repeatLastResponse()
+            return true
+        }
+
+        val helpWords = listOf("help", "what can you do", "what do you do", "how do i use", "commands")
+        if (t.length <= 24 && helpWords.any { it in t }) {
+            Log.i(TAG, "CONTROL: help")
+            speakAndDisplay(responseBuilder.buildHelpResponse())
+            autoRelisten()
+            return true
+        }
+
+        return false
+    }
+
+    /**
+     * Re-speaks the last spoken response, intentionally bypassing the 3-second
+     * de-dupe in speakAndDisplay so "repeat" always produces audio.
+     */
+    private fun repeatLastResponse() {
+        if (lastSpokenText.isBlank()) {
+            speakAndDisplay(SpokenResponse("I haven't said anything yet."))
+            return
+        }
+        Log.i(TAG, "Repeating last response: '$lastSpokenText'")
+        _uiState.value = _uiState.value.copy(lastResponse = lastSpokenText)
+        voice.speak(lastSpokenText)
     }
 
     private fun handleRememberGoal(goal: UserGoal) {
@@ -520,6 +625,23 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /**
+     * Speaks a one-shot mode's final result, waits out the utterance, then
+     * returns to the hands-free voice loop. The wait matters: returnToIdle()
+     * stops TTS, so calling it before the audio finishes truncates the answer.
+     */
+    private fun speakThenReset(response: SpokenResponse) {
+        speakAndDisplay(response)
+        viewModelScope.launch {
+            var waitedMs = 0L
+            while (voice.isSpeaking.value && waitedMs < 12000) {
+                delay(200)
+                waitedMs += 200
+            }
+            returnToIdle()
+        }
+    }
+
+    /**
      * Always-on approach radar: announces when any non-target object starts
      * moving toward the user, throttled per label.
      */
@@ -578,6 +700,61 @@ class SightlineViewModel(application: Application) : AndroidViewModel(applicatio
             }
             speakAndDisplay(responseBuilder.buildOcrResponse(text))
             returnToIdle()
+        }
+    }
+
+    /**
+     * One-shot COLOR mode: samples the centre of the frame, answers either the
+     * colour question or the lighting question based on what the user asked.
+     */
+    private fun runColorDetect(bitmap: android.graphics.Bitmap) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { ColorLightDetector.detect(bitmap) }
+            bitmap.recycle()
+            val raw = _uiState.value.currentGoal?.rawUtterance?.lowercase() ?: ""
+            val asksLighting = listOf("light", "dark", "bright").any { it in raw } &&
+                !raw.contains("color") && !raw.contains("colour")
+            val response = if (asksLighting) {
+                responseBuilder.buildLightResponse(result.isBright, result.isDark)
+            } else {
+                responseBuilder.buildColorResponse(result.colorName)
+            }
+            speakThenReset(response)
+        }
+    }
+
+    /**
+     * One-shot BARCODE mode: scans the frame once for a barcode/QR code.
+     */
+    private fun runBarcode(bitmap: android.graphics.Bitmap) {
+        viewModelScope.launch {
+            val code = withContext(Dispatchers.IO) { barcodeReader.read(bitmap) }
+            bitmap.recycle()
+            val response = if (code != null) {
+                responseBuilder.buildBarcodeResponse(code.formatName, code.value)
+            } else {
+                SpokenResponse("I can't see a barcode or QR code. Move closer and say, scan this, again.")
+            }
+            speakThenReset(response)
+        }
+    }
+
+    /**
+     * One-shot MONEY mode: runs the currency model once and speaks the
+     * denominations found in the frame.
+     */
+    private fun runMoney(bitmap: android.graphics.Bitmap) {
+        viewModelScope.launch {
+            val noteLabels = withContext(Dispatchers.IO) {
+                try {
+                    moneyDetector.detect(bitmap).map { it.label }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Money detect failed", e)
+                    emptyList()
+                }
+            }
+            bitmap.recycle()
+            speakThenReset(responseBuilder.buildMoneyResponse(noteLabels))
         }
     }
 

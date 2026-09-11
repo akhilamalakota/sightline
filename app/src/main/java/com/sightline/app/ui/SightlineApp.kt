@@ -99,6 +99,9 @@ fun SightlineApp(viewModel: SightlineViewModel) {
                 GoalMode.UNDERSTAND -> Color(0xFF9C27B0)
                 GoalMode.REMEMBER -> Color(0xFFFF9800)
                 GoalMode.READ -> Color(0xFF00BCD4)
+                GoalMode.MONEY -> Color(0xFFCDDC39)
+                GoalMode.BARCODE -> Color(0xFF7E57C2)
+                GoalMode.COLOR -> Color(0xFFEC407A)
                 GoalMode.IDLE -> Color.Gray
             }
             Card(

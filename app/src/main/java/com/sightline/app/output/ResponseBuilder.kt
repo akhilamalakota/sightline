@@ -188,6 +188,76 @@ class ResponseBuilder {
     }
 
     /**
+     * MONEY mode — one sentence listing the denominations seen in the frame.
+     */
+    fun buildMoneyResponse(noteLabels: List<String>): SpokenResponse {
+        if (noteLabels.isEmpty()) {
+            return SpokenResponse(
+                text = "I can't see any money. Point the camera at the notes and say, how much is this, again."
+            )
+        }
+        val parts = noteLabels
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.key.toIntOrNull() ?: 0 }
+            .map { (denom, count) ->
+                when (count) {
+                    1 -> "a $denom rupee note"
+                    2 -> "two $denom rupee notes"
+                    else -> "$count $denom rupee notes"
+                }
+            }
+        return SpokenResponse(text = "I see ${parts.joinToString(", ")}.")
+    }
+
+    /**
+     * BARCODE mode — QR content reads verbatim; retail product codes are
+     * spoken one digit at a time so there is zero ambiguity over TTS.
+     */
+    fun buildBarcodeResponse(formatName: String, value: String): SpokenResponse {
+        val v = value.trim()
+        return when {
+            formatName == "QR" -> SpokenResponse(
+                text = "The QR code says: ${v.take(120)}"
+            )
+            v.isNotEmpty() && v.all { it.isDigit() } -> SpokenResponse(
+                text = "Product code: " + v.chunked(3).joinToString(", ") { it.chunked(1).joinToString(" ") }
+            )
+            else -> SpokenResponse(text = "$formatName: ${v.take(120)}")
+        }
+    }
+
+    /**
+     * COLOR mode — answer to "what colour is this?".
+     */
+    fun buildColorResponse(colorName: String): SpokenResponse {
+        return SpokenResponse(text = "This looks $colorName.")
+    }
+
+    /**
+     * COLOR mode — answer to "is the light on?" / "is it dark?".
+     */
+    fun buildLightResponse(isBright: Boolean, isDark: Boolean): SpokenResponse {
+        return when {
+            isDark -> SpokenResponse(text = "It's very dark. The light might be off.")
+            isBright -> SpokenResponse(text = "It's bright in here. The light is on.")
+            else -> SpokenResponse(text = "Lighting looks moderate.")
+        }
+    }
+
+    /**
+     * HELP command — lists what the user can say.
+     */
+    fun buildHelpResponse(): SpokenResponse {
+        return SpokenResponse(
+            text = "I can find things, guide you, read text, count money, scan bar codes, and tell colors. " +
+                "Try: find a chair. What is around me. Read this. How much is this. " +
+                "What color is this. Or scan this. Say stop to cancel."
+        )
+    }
+
+    /**
      * Permission denied response.
      */
     fun buildPermissionDeniedResponse(): SpokenResponse {

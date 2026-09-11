@@ -46,6 +46,24 @@ class GoalParser {
                 "read the sign", "read the text", "read the letter", "read the menu",
                 "read the label", "read the paper", "read the board")
         ),
+        IntentPattern(
+            GoalMode.MONEY,
+            listOf("how much is this", "how much", "count money", "recognize money",
+                "what is this worth", "what's this worth", "money", "currency",
+                "rupee", "rupees", "cash", "note", "notes")
+        ),
+        IntentPattern(
+            GoalMode.BARCODE,
+            listOf("barcode", "bar code", "scan this", "scan the code", "scan a code",
+                "scan it", "qr code", "qrcode", "product code")
+        ),
+        IntentPattern(
+            GoalMode.COLOR,
+            listOf("what color", "what colour", "what color is this", "what colour is this",
+                "color of this", "colour of this", "is the light on", "is it dark",
+                "is the room dark", "is the room bright", "how bright is it",
+                "what's the color", "what's the colour")
+        ),
     )
 
     /** Common objects the system can find. Extend as needed. */
@@ -118,6 +136,12 @@ class GoalParser {
         if (matchedMode == GoalMode.READ && matchedTarget.isEmpty()) {
             matchedTarget = "text"
         }
+
+        // One-shot special modes don't need a target either — the mode itself
+        // is the intent ("how much is this", "scan this", "what color").
+        if (matchedMode == GoalMode.MONEY && matchedTarget.isEmpty()) matchedTarget = "money"
+        if (matchedMode == GoalMode.BARCODE && matchedTarget.isEmpty()) matchedTarget = "code"
+        if (matchedMode == GoalMode.COLOR && matchedTarget.isEmpty()) matchedTarget = "color"
 
         if (matchedTarget.isEmpty()) return null
 

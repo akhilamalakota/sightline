@@ -25,6 +25,11 @@ models/*.tflite
 models/yolov8n_saved_model/
 models/yolov8n_savedmodel/
 models/calibration_image_sample_data_20x128x128x3_float32.npy
+# Currency export intermediates (python export_currency.py; app uses assets/currency.tflite)
+models/yolov8n_currency_best.pt
+models/yolov8n_currency_best.onnx
+models/yolov8n_currency_best_saved_model/
+models/export_currency.err
 
 # Misc
 download/

@@ -30,7 +30,7 @@ enum class Direction { LEFT, CENTER, RIGHT }
 enum class DistanceZone { NEAR, MID, FAR }
 
 /** What the system is currently trying to do. */
-enum class GoalMode { IDLE, FIND, GUIDE, UNDERSTAND, REMEMBER, READ }
+enum class GoalMode { IDLE, FIND, GUIDE, UNDERSTAND, REMEMBER, READ, MONEY, BARCODE, COLOR }
 
 /** Status of the path ahead. */
 enum class PathStatus { CLEAR, BLOCKED, UNKNOWN }

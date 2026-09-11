@@ -68,6 +68,9 @@ dependencies {
     // ML Kit Text Recognition (OCR - Phase 6)
     implementation("com.google.mlkit:text-recognition:16.0.0")
 
+    // ML Kit Barcode Scanning (BARCODE mode - Phase 7)
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
     // Vosk offline wake word (open source, no API key - "Hey Sightline")
     implementation("com.alphacephei:vosk-android:0.3.75")
 
